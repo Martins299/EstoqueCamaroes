@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Painel · Estoque de Camarões{% endblock %}
+{% block body %}
+<div class="app-shell">
+  {% include "partials/sidebar.html" %}
+  <main class="main-content">
+    <header class="page-header">
+      <div><p class="eyebrow">VISÃO GERAL</p><h1>Painel</h1><p class="muted-copy">Acompanhe seu estoque de camarões.</p></div>
+      <a class="btn btn-primary" href="{{ url_for('inventory.new_lot') }}">+ Cadastrar lote</a>
+    </header>
+
+    <section class="metric-grid" aria-label="Indicadores de estoque">
+      <article class="metric-card"><span class="metric-label">Estoque armazenado</span><strong>{{ '%.3f'|format(total_kg|float) }} <small>kg</small></strong><span class="metric-caption">Saldo calculado pelas movimentações</span></article>
+      <article class="metric-card"><span class="metric-label">Lotes ativos</span><strong>{{ active_lots }}</strong><span class="metric-caption">Com saldo disponível</span></article>
+      <article class="metric-card"><span class="metric-label">Câmaras ativas</span><strong>{{ active_chambers }}</strong><span class="metric-caption">Disponíveis para armazenamento</span></article>
+    </section>
+
+    <section class="panel-card attention-panel" aria-labelledby="attention-title">
+      <div class="section-heading"><div><p class="eyebrow">VALIDADE</p><h2 id="attention-title">Lotes vencidos ou próximos do vencimento</h2></div><span class="status-pill {% if expiring_lots %}warning{% else %}positive{% endif %}">{{ expiring_lots|length }} lote(s)</span></div>
+      {% if expiring_lots %}
+        <div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Lote</th><th>Validade</th><th>Saldo</th></tr></thead><tbody>
+        {% for lot, balance in expiring_lots %}<tr><td>{{ lot.code }}</td><td>{% if lot.expires_on < today %}<span class="status-pill critical">Vencido</span> {% else %}<span class="status-pill warning">Próximo</span> {% endif %}{{ lot.expires_on.strftime('%d/%m/%Y') }}</td><td>{{ '%.3f'|format(balance|float) }} kg</td></tr>{% endfor %}
+        </tbody></table></div>
+      {% else %}<p class="empty-message">Nenhum lote vencido ou com validade nos próximos sete dias.</p>{% endif %}
+    </section>
+
+    <section class="quick-actions" aria-labelledby="quick-title">
+      <div class="section-heading"><div><p class="eyebrow">ATALHOS</p><h2 id="quick-title">Ações rápidas</h2></div></div>
+      <div class="action-grid">
+        <a class="action-card text-decoration-none" href="{{ url_for('inventory.new_lot') }}"><span class="action-icon">＋</span><span><strong>Novo lote</strong><small>Cadastrar produto recebido</small></span></a>
+        <a class="action-card text-decoration-none" href="{{ url_for('inventory.new_movement', type='ENTRADA') }}"><span class="action-icon green">↓</span><span><strong>Registrar entrada</strong><small>Adicionar quantidade ao lote</small></span></a>
+        <a class="action-card text-decoration-none" href="{{ url_for('inventory.new_movement', type='SAIDA') }}"><span class="action-icon coral">↑</span><span><strong>Registrar saída</strong><small>Retirar quantidade do lote</small></span></a>
+      </div>
+    </section>
+
+    <section class="panel-card" aria-labelledby="recent-title">
+      <div class="section-heading"><div><p class="eyebrow">HISTÓRICO</p><h2 id="recent-title">Movimentações recentes</h2></div></div>
+      {% if recent_movements %}
+        <div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Data</th><th>Tipo</th><th>Lote</th><th>Quantidade</th></tr></thead><tbody>
+        {% for movement in recent_movements %}<tr><td>{{ (movement.occurred_at|fortaleza_time).strftime('%d/%m/%Y %H:%M') }}</td><td>{{ movement.kind|title }}</td><td>{{ movement.lot.code }}</td><td>{{ '%.3f'|format(movement.quantity_kg|float) }} kg</td></tr>{% endfor %}
+        </tbody></table></div>
+      {% else %}<div class="empty-state"><div class="empty-icon">▤</div><h3>Seu histórico começa com o primeiro lote</h3><p>Quando você cadastrar um lote, a entrada inicial e as próximas movimentações aparecerão aqui.</p></div>{% endif %}
+    </section>
+    <footer class="app-footer">Controle interno de estoque · Quantidades em quilogramas</footer>
+  </main>
+</div>
+{% endblock %}
+

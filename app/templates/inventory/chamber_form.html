@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Editar câmara · Estoque de Camarões{% endblock %}
+{% block body %}
+<div class="app-shell">
+  {% include "partials/sidebar.html" %}
+  <main class="main-content">
+    <header class="page-header"><div><p class="eyebrow">ARMAZENAMENTO</p><h1>Editar câmara</h1><p class="muted-copy">Atualize a identificação ou a descrição do local.</p></div><a class="btn btn-light" href="{{ url_for('inventory.chambers') }}">Voltar às câmaras</a></header>
+    {% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div class="alert alert-{{ category }}" role="alert">{{ message }}</div>{% endfor %}{% endwith %}
+    <section class="panel-card edit-form-card"><form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="mb-3"><label class="form-label" for="name">Nome ou identificação*</label><input class="form-control" id="name" name="name" maxlength="80" required value="{{ request.form.get('name', chamber.name) }}"></div>
+      <div class="mb-3"><label class="form-label" for="description">Descrição <span class="optional-label">(opcional)</span></label><textarea class="form-control" id="description" name="description" maxlength="250" rows="3">{{ request.form.get('description', chamber.description or '') }}</textarea></div>
+      <div class="form-actions"><a class="btn btn-light" href="{{ url_for('inventory.chambers') }}">Cancelar</a><button class="btn btn-primary" type="submit">Salvar alterações</button></div>
+    </form></section>
+  </main>
+</div>
+{% endblock %}

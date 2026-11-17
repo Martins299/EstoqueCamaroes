@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Estoque · Estoque de Camarões{% endblock %}
+{% block body %}
+<div class="app-shell">
+  {% include "partials/sidebar.html" %}
+  <main class="main-content">
+    <header class="page-header">
+      <div><p class="eyebrow">INVENTÁRIO</p><h1>Estoque</h1><p class="muted-copy">Consulte lotes e saldos disponíveis.</p></div>
+      <a class="btn btn-primary" href="{{ url_for('inventory.new_lot') }}">+ Cadastrar lote</a>
+    </header>
+    {% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div class="alert alert-{{ category }}" role="alert">{{ message }}</div>{% endfor %}{% endwith %}
+    <section class="panel-card">
+      <form method="get" class="filter-form">
+        <div class="filter-search"><label class="form-label" for="q">Buscar lote ou procedência</label><input class="form-control" id="q" name="q" value="{{ filters.q }}" placeholder="Código, embarcação, fazenda..."></div>
+        <div><label class="form-label" for="classification">Classificação</label><select class="form-select" id="classification" name="classification"><option value="">Todas</option>{% for item in classifications %}<option value="{{ item.id }}" {% if filters.classification == item.id %}selected{% endif %}>{{ item.name }}</option>{% endfor %}</select></div>
+        <div><label class="form-label" for="presentation">Apresentação</label><select class="form-select" id="presentation" name="presentation"><option value="">Todas</option>{% for item in presentations %}<option value="{{ item.id }}" {% if filters.presentation == item.id %}selected{% endif %}>{{ item.name }}</option>{% endfor %}</select></div>
+        <div><label class="form-label" for="origin">Origem</label><select class="form-select" id="origin" name="origin"><option value="">Todas</option><option value="MAR" {% if filters.origin == 'MAR' %}selected{% endif %}>Mar</option><option value="VIVEIRO" {% if filters.origin == 'VIVEIRO' %}selected{% endif %}>Viveiro</option></select></div>
+        <div><label class="form-label" for="chamber">Câmara</label><select class="form-select" id="chamber" name="chamber"><option value="">Todas</option>{% for item in chambers %}<option value="{{ item.id }}" {% if filters.chamber == item.id %}selected{% endif %}>{{ item.name }}</option>{% endfor %}</select></div>
+        <div><label class="form-label" for="status">Situação</label><select class="form-select" id="status" name="status"><option value="active" {% if filters.status == 'active' %}selected{% endif %}>Ativos</option><option value="closed" {% if filters.status == 'closed' %}selected{% endif %}>Sem saldo</option><option value="all" {% if filters.status == 'all' %}selected{% endif %}>Todos</option></select></div>
+        <div class="filter-buttons"><button class="btn btn-primary" type="submit">Filtrar</button><a class="btn btn-light" href="{{ url_for('inventory.stock_list') }}">Limpar</a></div>
+      </form>
+      <div class="section-heading inventory-results-heading"><div><p class="eyebrow">RESULTADOS</p><h2>{{ rows|length }} lote(s)</h2></div></div>
+      <div class="stock-summary-grid" aria-label="Resumo do saldo por categoria">
+        {% for key, title in [('classification', 'Por classificação'), ('presentation', 'Por apresentação'), ('origin', 'Por origem'), ('chamber', 'Por câmara')] %}
+        <section class="stock-summary-card"><h3>{{ title }}</h3>{% if summaries[key] %}<ul>{% for label, amount in summaries[key].items() %}<li><span>{{ label }}</span><strong>{{ '%.3f'|format(amount|float) }} kg</strong></li>{% endfor %}</ul>{% else %}<p class="summary-empty">Sem saldo nos lotes exibidos.</p>{% endif %}</section>
+        {% endfor %}
+      </div>
+      {% if rows %}
+      <div class="table-responsive"><table class="table align-middle inventory-table"><thead><tr><th>Lote</th><th>Classificação</th><th>Apresentação</th><th>Origem</th><th>Câmara</th><th>Saldo</th><th>Validade</th><th>Situação</th></tr></thead><tbody>
+      {% for lot, balance in rows %}
+        <tr>
+          <td><a class="lot-link" href="{{ url_for('inventory.lot_detail', lot_id=lot.id) }}"><strong>{{ lot.code }}</strong></a></td><td>{{ lot.classification.name }}</td><td>{{ lot.presentation.name }}</td>
+          <td>{{ "Mar" if lot.origin == "MAR" else "Viveiro" }}</td><td>{{ lot.current_chamber.name }}</td>
+          <td>{{ '%.3f'|format(balance|float) }} kg</td><td>{{ lot.expires_on.strftime('%d/%m/%Y') if lot.expires_on else '—' }}</td>
+          <td><span class="status-pill {{ 'positive' if balance > 0 else 'neutral' }}">{{ 'Ativo' if balance > 0 else 'Sem saldo' }}</span></td>
+        </tr>
+      {% endfor %}
+      </tbody></table></div>
+      {% else %}
+        <div class="empty-state inventory-empty"><div class="empty-icon">▤</div><h3>{% if filters.q or filters.classification or filters.presentation or filters.origin or filters.chamber or filters.status == 'closed' %}Nenhum lote encontrado{% else %}Nenhum lote cadastrado{% endif %}</h3><p>{% if filters.q or filters.classification or filters.presentation or filters.origin or filters.chamber or filters.status == 'closed' %}Ajuste os filtros ou limpe a busca para ver outros lotes.{% else %}Cadastre o primeiro lote para começar a acompanhar o estoque.{% endif %}</p></div>
+      {% endif %}
+    </section>
+    <footer class="app-footer">Quantidades em quilogramas</footer>
+  </main>
+</div>
+{% endblock %}
+

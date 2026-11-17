@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Entrar · Estoque de Camarões{% endblock %}
+{% block body %}
+<main class="login-shell">
+  <section class="login-card" aria-labelledby="login-title">
+    <div class="brand-mark" aria-hidden="true">EC</div>
+    <p class="eyebrow">CONTROLE SIMPLES, ESTOQUE ORGANIZADO</p>
+    <h1 id="login-title">Acesse sua conta</h1>
+    <p class="muted-copy">Entre para consultar lotes e movimentações.</p>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}<div class="alert alert-{{ category }}" role="alert">{{ message }}</div>{% endfor %}
+    {% endwith %}
+    <form method="post" action="{{ url_for('auth.login') }}" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="mb-3">
+        <label for="email" class="form-label">E-mail</label>
+        <input class="form-control form-control-lg" id="email" name="email" type="email" autocomplete="username" required autofocus>
+      </div>
+      <div class="mb-4">
+        <label for="password" class="form-label">Senha</label>
+        <input class="form-control form-control-lg" id="password" name="password" type="password" autocomplete="current-password" required>
+      </div>
+      <button class="btn btn-primary btn-lg w-100" type="submit">Entrar</button>
+    </form>
+    {% if google_client_id %}
+      <div class="d-flex align-items-center gap-3 my-4 text-secondary"><hr class="flex-grow-1"><small>ou</small><hr class="flex-grow-1"></div>
+      <div id="g_id_onload" data-client_id="{{ google_client_id }}" data-callback="handleGoogleCredential" data-auto_prompt="false"></div>
+      <div class="d-flex justify-content-center"><div class="g_id_signin" data-type="standard" data-size="large" data-theme="outline" data-text="signin_with" data-shape="rectangular" data-logo_alignment="left"></div></div>
+      <form id="google-login-form" method="post" action="{{ url_for('auth.google_login') }}" hidden>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="credential" id="google-credential">
+      </form>
+      <script>
+        window.handleGoogleCredential = function (response) {
+          document.getElementById('google-credential').value = response.credential;
+          document.getElementById('google-login-form').submit();
+        };
+      </script>
+      <script src="https://accounts.google.com/gsi/client" async defer></script>
+    {% endif %}
+    <p class="login-footnote"><a href="{{ url_for('auth.forgot_password') }}">Esqueci minha senha</a><br><span class="text-secondary">Ainda não tem conta?</span> <a href="{{ url_for('auth.register') }}">Cadastre seu estabelecimento</a></p>
+  </section>
+</main>
+{% endblock %}
+

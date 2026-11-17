@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Criar conta · Estoque de Camarões{% endblock %}
+{% block body %}
+<main class="login-shell"><section class="login-card" aria-labelledby="register-title">
+  <div class="brand-mark" aria-hidden="true">EC</div><p class="eyebrow">UMA CONTA PARA CADA NEGÓCIO</p>
+  <h1 id="register-title">Cadastre seu estabelecimento</h1><p class="muted-copy">Seu estoque e suas movimentações serão isolados das outras contas.</p>
+  {% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div class="alert alert-{{ category }}" role="alert">{{ message }}</div>{% endfor %}{% endwith %}
+  <form method="post" action="{{ url_for('auth.register') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="mb-3"><label for="establishment_name" class="form-label">Nome do estabelecimento</label><input class="form-control form-control-lg" id="establishment_name" name="establishment_name" maxlength="140" autocomplete="organization" required value="{{ request.form.get('establishment_name', '') }}"></div>
+    <div class="mb-3"><label for="name" class="form-label">Nome do responsável</label><input class="form-control form-control-lg" id="name" name="name" maxlength="120" autocomplete="name" required value="{{ request.form.get('name', '') }}"></div>
+    <div class="mb-3"><label for="email" class="form-label">E-mail</label><input class="form-control form-control-lg" id="email" name="email" type="email" maxlength="255" autocomplete="email" required value="{{ request.form.get('email', '') }}"></div>
+    <div class="mb-3"><label for="password" class="form-label">Senha <small class="text-secondary">(mínimo de 12 caracteres)</small></label><input class="form-control form-control-lg" id="password" name="password" type="password" minlength="12" autocomplete="new-password" required></div>
+    <div class="mb-4"><label for="password_confirmation" class="form-label">Confirme a senha</label><input class="form-control form-control-lg" id="password_confirmation" name="password_confirmation" type="password" minlength="12" autocomplete="new-password" required></div>
+    <button class="btn btn-primary btn-lg w-100" type="submit">Criar conta</button>
+  </form><p class="login-footnote">Já tem uma conta? <a href="{{ url_for('auth.login') }}">Entrar</a></p>
+</section></main>
+{% endblock %}

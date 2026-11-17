@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Novo lote · Estoque de Camarões{% endblock %}
+{% block body %}
+<div class="app-shell">
+  {% include "partials/sidebar.html" %}
+  <main class="main-content">
+    <header class="page-header"><div><p class="eyebrow">ESTOQUE</p><h1>Novo lote</h1><p class="muted-copy">Cadastre o produto, sua procedência e o local de armazenamento.</p></div><a class="btn btn-light" href="{{ url_for('inventory.stock_list') }}">Voltar ao estoque</a></header>
+    {% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div class="alert alert-{{ category }}" role="alert">{{ message }}</div>{% endfor %}{% endwith %}
+    <form method="post" class="form-page">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <section class="panel-card form-section">
+        <div class="form-section-title"><span class="step-number">1</span><div><h2>Identificação do produto</h2><p>Informe os dados usados para localizar e acompanhar o lote.</p></div></div>
+        <div class="form-grid">
+          <div><label class="form-label" for="code">Código do lote*</label><input class="form-control" id="code" name="code" maxlength="60" required value="{{ request.form.get('code','') }}" placeholder="Ex.: CAM-2026-001"></div>
+          <div><label class="form-label" for="classification_id">Classificação*</label><select class="form-select" id="classification_id" name="classification_id" required><option value="">Selecione</option>{% for item in classifications %}<option value="{{ item.id }}" {% if request.form.get('classification_id') == item.id|string %}selected{% endif %}>{{ item.name }}</option>{% endfor %}</select></div>
+          <div><label class="form-label" for="presentation_id">Apresentação*</label><select class="form-select" id="presentation_id" name="presentation_id" required><option value="">Selecione</option>{% for item in presentations %}<option value="{{ item.id }}" {% if request.form.get('presentation_id') == item.id|string %}selected{% endif %}>{{ item.name }}</option>{% endfor %}</select></div>
+          <div><label class="form-label" for="quantity">Quantidade inicial (kg)*</label><input class="form-control" id="quantity" name="quantity" type="number" min="0.001" step="0.001" inputmode="decimal" required value="{{ request.form.get('quantity','') }}" placeholder="Ex.: 25,500"></div>
+          <div><label class="form-label" for="received_on">Data de entrada*</label><input class="form-control" id="received_on" name="received_on" type="date" required value="{{ request.form.get('received_on', today) }}"></div>
+          <div><label class="form-label" for="expires_on">Data de validade <span class="optional-label">(opcional)</span></label><input class="form-control" id="expires_on" name="expires_on" type="date" value="{{ request.form.get('expires_on','') }}"></div>
+        </div>
+      </section>
+      <section class="panel-card form-section">
+        <div class="form-section-title"><span class="step-number">2</span><div><h2>Procedência</h2><p>Os campos mudam conforme a origem selecionada.</p></div></div>
+        <div class="mb-3"><label class="form-label d-block">Origem do camarão*</label><div class="origin-options"><label class="origin-option"><input type="radio" name="origin" value="MAR" required {% if request.form.get('origin') == 'MAR' %}checked{% endif %}><span><strong>Mar</strong><small>Embarcação ou atravessador</small></span></label><label class="origin-option"><input type="radio" name="origin" value="VIVEIRO" required {% if request.form.get('origin') == 'VIVEIRO' %}checked{% endif %}><span><strong>Viveiro</strong><small>Fazenda ou produtor</small></span></label></div></div>
+        <div id="mar-fields" class="form-grid conditional-fields" {% if request.form.get('origin') != 'MAR' %}hidden{% endif %}>
+          <div><label class="form-label" for="vessel_or_broker">Embarcação ou atravessador*</label><input class="form-control" id="vessel_or_broker" name="vessel_or_broker" maxlength="160" value="{{ request.form.get('vessel_or_broker','') }}"></div>
+          <div><label class="form-label" for="mar-note">Identificação ou observação</label><input class="form-control" id="mar-note" name="mar_provenance_note" maxlength="300" value="{{ request.form.get('mar_provenance_note','') }}" placeholder="Ex.: referência de procedência"></div>
+        </div>
+        <div id="pond-fields" class="form-grid conditional-fields" {% if request.form.get('origin') != 'VIVEIRO' %}hidden{% endif %}>
+          <div><label class="form-label" for="farm_or_producer">Fazenda ou produtor*</label><input class="form-control" id="farm_or_producer" name="farm_or_producer" maxlength="160" value="{{ request.form.get('farm_or_producer','') }}"></div>
+          <div><label class="form-label" for="origin_location">Local de origem*</label><input class="form-control" id="origin_location" name="origin_location" maxlength="160" value="{{ request.form.get('origin_location','') }}" placeholder="Município ou localidade"></div>
+          <div class="full-width"><label class="form-label" for="pond-note">Identificação ou observação</label><input class="form-control" id="pond-note" name="pond_provenance_note" maxlength="300" value="{{ request.form.get('pond_provenance_note','') }}"></div>
+        </div>
+      </section>
+      <section class="panel-card form-section">
+        <div class="form-section-title"><span class="step-number">3</span><div><h2>Armazenamento</h2><p>Selecione onde o lote será guardado.</p></div></div>
+        <div class="form-grid">
+          <div><label class="form-label" for="chamber_id">Câmara frigorífica*</label><select class="form-select" id="chamber_id" name="chamber_id" required><option value="">Selecione uma câmara ativa</option>{% for item in chambers %}<option value="{{ item.id }}" {% if request.form.get('chamber_id') == item.id|string %}selected{% endif %}>{{ item.name }}</option>{% endfor %}</select>{% if not chambers %}<small class="field-hint">Cadastre uma câmara antes de criar o lote.</small>{% endif %}</div>
+          <div class="full-width"><label class="form-label" for="notes">Observações <span class="optional-label">(opcional)</span></label><textarea class="form-control" id="notes" name="notes" rows="3" maxlength="2000">{{ request.form.get('notes','') }}</textarea></div>
+        </div>
+      </section>
+      <div class="form-actions"><a class="btn btn-light" href="{{ url_for('inventory.stock_list') }}">Cancelar</a><button class="btn btn-primary" type="submit" {% if not chambers or not classifications or not presentations %}disabled{% endif %}>Salvar lote</button></div>
+    </form>
+    <footer class="app-footer">A quantidade inicial será registrada também como a primeira entrada do histórico.</footer>
+  </main>
+</div>
+<script>
+  const originInputs = document.querySelectorAll('input[name="origin"]');
+  const marFields = document.getElementById('mar-fields');
+  const pondFields = document.getElementById('pond-fields');
+  const vessel = document.getElementById('vessel_or_broker');
+  const farm = document.getElementById('farm_or_producer');
+  const locationField = document.getElementById('origin_location');
+  function updateOriginFields() {
+    const selected = document.querySelector('input[name="origin"]:checked')?.value;
+    marFields.hidden = selected !== 'MAR';
+    pondFields.hidden = selected !== 'VIVEIRO';
+    vessel.required = selected === 'MAR';
+    farm.required = selected === 'VIVEIRO';
+    locationField.required = selected === 'VIVEIRO';
+  }
+  originInputs.forEach((input) => input.addEventListener('change', updateOriginFields));
+  updateOriginFields();
+</script>
+{% endblock %}
+

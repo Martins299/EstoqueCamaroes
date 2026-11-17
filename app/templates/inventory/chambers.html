@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Câmaras · Estoque de Camarões{% endblock %}
+{% block body %}
+<div class="app-shell">
+  {% include "partials/sidebar.html" %}
+  <main class="main-content">
+    <header class="page-header"><div><p class="eyebrow">ARMAZENAMENTO</p><h1>Câmaras frigoríficas</h1><p class="muted-copy">Gerencie os locais disponíveis para armazenar os lotes.</p></div></header>
+    {% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div class="alert alert-{{ category }}" role="alert">{{ message }}</div>{% endfor %}{% endwith %}
+    <div class="chamber-layout">
+      <section class="panel-card chamber-form-card">
+        <div class="section-heading"><div><p class="eyebrow">NOVA CÂMARA</p><h2>Cadastrar câmara</h2></div></div>
+        <form method="post" action="{{ url_for('inventory.chambers') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="mb-3"><label class="form-label" for="name">Nome ou identificação*</label><input class="form-control" id="name" name="name" maxlength="80" placeholder="Ex.: Câmara 01" required></div>
+          <div class="mb-3"><label class="form-label" for="description">Descrição <span class="optional-label">(opcional)</span></label><textarea class="form-control" id="description" name="description" rows="3" maxlength="250" placeholder="Ex.: armazenamento principal"></textarea></div>
+          <button class="btn btn-primary" type="submit">Salvar câmara</button>
+        </form>
+      </section>
+      <section class="panel-card chamber-list-card">
+        <div class="section-heading"><div><p class="eyebrow">CADASTRO</p><h2>{{ chambers|length }} câmara(s)</h2></div></div>
+        {% if chambers %}<div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Identificação</th><th>Descrição</th><th>Situação</th><th>Ação</th></tr></thead><tbody>
+        {% for chamber in chambers %}<tr><td><strong>{{ chamber.name }}</strong></td><td>{{ chamber.description or '—' }}</td><td><span class="status-pill {{ 'positive' if chamber.active else 'neutral' }}">{{ 'Ativa' if chamber.active else 'Inativa' }}</span></td><td><div class="table-actions"><a class="btn btn-sm btn-light" href="{{ url_for('inventory.edit_chamber', chamber_id=chamber.id) }}">Editar</a><form method="post" action="{{ url_for('inventory.toggle_chamber', chamber_id=chamber.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm {{ 'btn-outline-secondary' if chamber.active else 'btn-outline-success' }}" type="submit">{{ 'Desativar' if chamber.active else 'Ativar' }}</button></form></div></td></tr>{% endfor %}
+        </tbody></table></div>{% else %}<div class="empty-state"><div class="empty-icon">▥</div><h3>Nenhuma câmara cadastrada</h3><p>Cadastre uma câmara para selecioná-la ao registrar um lote.</p></div>{% endif %}
+      </section>
+    </div>
+    <footer class="app-footer">Câmaras com registros podem ser desativadas, preservando o histórico.</footer>
+  </main>
+</div>
+{% endblock %}
+
