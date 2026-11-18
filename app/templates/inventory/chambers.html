@@ -19,7 +19,43 @@
       <section class="panel-card chamber-list-card">
         <div class="section-heading"><div><p class="eyebrow">CADASTRO</p><h2>{{ chambers|length }} câmara(s)</h2></div></div>
         {% if chambers %}<div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Identificação</th><th>Descrição</th><th>Situação</th><th>Ação</th></tr></thead><tbody>
-        {% for chamber in chambers %}<tr><td><strong>{{ chamber.name }}</strong></td><td>{{ chamber.description or '—' }}</td><td><span class="status-pill {{ 'positive' if chamber.active else 'neutral' }}">{{ 'Ativa' if chamber.active else 'Inativa' }}</span></td><td><div class="table-actions"><a class="btn btn-sm btn-light" href="{{ url_for('inventory.edit_chamber', chamber_id=chamber.id) }}">Editar</a><form method="post" action="{{ url_for('inventory.toggle_chamber', chamber_id=chamber.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm {{ 'btn-outline-secondary' if chamber.active else 'btn-outline-success' }}" type="submit">{{ 'Desativar' if chamber.active else 'Ativar' }}</button></form></div></td></tr>{% endfor %}
+        {% for chamber in chambers %}
+<tr>
+  <td><strong>{{ chamber.name }}</strong></td>
+  <td>{{ chamber.description or '—' }}</td>
+  <td>
+    <span class="status-pill {{ 'positive' if chamber.active else 'neutral' }}">
+      {{ 'Ativa' if chamber.active else 'Inativa' }}
+    </span>
+  </td>
+  <td>
+    <div class="table-actions">
+      <a class="btn btn-sm btn-light"
+         href="{{ url_for('inventory.edit_chamber', chamber_id=chamber.id) }}">
+        Editar
+      </a>
+
+      <form method="post"
+            action="{{ url_for('inventory.toggle_chamber', chamber_id=chamber.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-sm {{ 'btn-outline-secondary' if chamber.active else 'btn-outline-success' }}"
+                type="submit">
+          {{ 'Desativar' if chamber.active else 'Ativar' }}
+        </button>
+      </form>
+
+      <form method="post"
+            action="{{ url_for('inventory.delete_chamber', chamber_id=chamber.id) }}"
+            onsubmit="return confirm('{% if chamber_lot_counts.get(chamber.id, 0) > 0 %}Atenção: esta câmara possui {{ chamber_lot_counts.get(chamber.id, 0) }} lote(s). A exclusão apagará esses lotes e todo o histórico de movimentações. Deseja continuar?{% else %}Confirma a exclusão desta câmara?{% endif %}')">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-sm btn-outline-danger" type="submit">
+          Excluir
+        </button>
+      </form>
+    </div>
+  </td>
+</tr>
+{% endfor %}
         </tbody></table></div>{% else %}<div class="empty-state"><div class="empty-icon">▥</div><h3>Nenhuma câmara cadastrada</h3><p>Cadastre uma câmara para selecioná-la ao registrar um lote.</p></div>{% endif %}
       </section>
     </div>

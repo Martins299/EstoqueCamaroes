@@ -36,6 +36,12 @@ def create_app(test_config=None):
         if value.tzinfo is None:
             value = value.replace(tzinfo=timezone.utc)
         return value.astimezone(ZoneInfo("America/Fortaleza"))
+    
+    @app.template_filter("kg_br")
+    def kg_br(value):
+        if value is None:
+            value = 0
+        return f"{value:,.3f}".translate(str.maketrans({",": ".", ".": ","}))
 
     from . import models
     from .tenancy import install_tenant_isolation

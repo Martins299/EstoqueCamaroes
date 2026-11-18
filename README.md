@@ -1,87 +1,153 @@
-# Sistema de estoque e rastreabilidade de camarões
+# Sistema Web de Estoque e Rastreabilidade de Camarões
 
-Aplicação web em Flask para organizar lotes, procedência, câmaras e movimentações de estoque em pequenos empreendimentos. Cada cadastro cria uma conta de estabelecimento com os dados isolados dos demais.
+Aplicação web desenvolvida como parte do Trabalho de Conclusão de Curso em Sistemas de Informação de Eliseu Ferreira Martins.
 
-## Tecnologias
+## Sobre o TCC
 
-- Python e Flask
-- Flask-SQLAlchemy e PostgreSQL
-- Flask-Login para sessões autenticadas
-- Flask-WTF para proteção CSRF
-- Bootstrap 5.3 para a base responsiva da interface
+O projeto propõe um sistema web para controle de estoque e rastreabilidade de camarões em frigoríficos e pequenos empreendimentos. A proposta surgiu da experiência do autor na administração de barcos e na venda de camarões, além de relatos de compradores que enfrentaram perdas por dificuldades no controle de estoque.
 
-## Preparação local no Windows PowerShell
+O sistema organiza lotes, procedência, câmaras frigoríficas e movimentações. Seu foco é oferecer uma ferramenta simples para apoiar pequenos empreendedores na consulta e acompanhamento do histórico de cada lote.
 
-1. Entre na pasta `webapp`.
-2. Crie e ative um ambiente virtual:
+**Título de trabalho:** Desenvolvimento de um sistema web para controle de estoque e rastreabilidade de camarões em frigoríficos.
 
-   ```powershell
-   py -m venv .venv
-   .\.venv\Scripts\Activate.ps1
-   ```
+## Funcionalidades
 
-3. Instale as dependências:
+- Cadastro de contas independentes por estabelecimento.
+- Acesso com e-mail e senha, login com Google e recuperação de senha por e-mail.
+- Cadastro, edição, ativação, desativação e exclusão de câmaras.
+- Cadastro de lotes com classificação, apresentação, origem, procedência, validade e câmara.
+- Registro de entradas, saídas e descartes.
+- Bloqueio de saídas e descartes acima do saldo disponível.
+- Exigência do motivo para registrar um descarte.
+- Consulta do saldo e do histórico de movimentações por lote.
+- Edição de dados do lote sem alterar seu peso ou câmara, preservando o histórico.
+- Preferências de tema e cor de destaque.
 
-   ```powershell
-   python -m pip install -r requirements.txt
-   ```
+A exclusão de um lote remove também suas movimentações. A exclusão de uma câmara remove os lotes vinculados e seus históricos. O sistema apresenta uma confirmação antes dessas ações, que são permanentes.
 
-4. Crie o arquivo local de configuração e defina uma chave secreta:
+## Tecnologias e serviços
 
-   ```powershell
-   Copy-Item .env.example .env
-   ```
+| Componente               | Tecnologia ou serviço             | Uso                                      |
+| ------------------------ | --------------------------------- | ---------------------------------------- |
+| Backend                  | Python e Flask                    | Regras de negócio e páginas web          |
+| Interface                | HTML, CSS, JavaScript e Bootstrap | Formulários e layout responsivo          |
+| Banco de dados local     | SQLite                            | Desenvolvimento no computador            |
+| Banco de dados hospedado | PostgreSQL no Neon                | Dados da versão publicada                |
+| Hospedagem da aplicação  | Render                            | Disponibilização do sistema na internet  |
+| E-mail transacional      | Brevo                             | Envio de links para redefinição de senha |
+| Login Google             | Google OAuth 2.0                  | Autenticação com conta Google            |
+| Controle de versão       | Git e GitHub                      | Histórico e armazenamento do código      |
 
-   Troque `SECRET_KEY` por uma chave aleatória longa. Sem `DATABASE_URL`, a aplicação usa SQLite apenas para desenvolvimento local. Para conectar PostgreSQL, configure `DATABASE_URL` no formato `postgresql+psycopg://...` no arquivo `.env`. Preencha também as variáveis `MAIL_*` com os dados SMTP e `GOOGLE_CLIENT_ID` com o Client ID Web do Google, se desejar ativar o botão Google. Não compartilhe o arquivo `.env`.
+## Como usar o sistema
 
-5. Crie as tabelas do banco usando as migrações que já acompanham o projeto:
+### 1. Criar uma conta ou entrar
 
-   ```powershell
-   flask --app run.py db upgrade
-   ```
+Acesse o site e cadastre-se com nome, e-mail e senha. Cada cadastro cria uma conta de estabelecimento com dados separados dos demais. Também é possível entrar com Google depois de vincular uma conta com o mesmo e-mail.
 
-6. Inclua as classificações e apresentações iniciais e crie o administrador:
+### 2. Cadastrar as câmaras
 
-   ```powershell
-   flask --app run.py seed-catalogs
-   flask --app run.py create-admin
-   ```
+No menu, acesse **Câmaras**, informe a identificação do local de armazenamento e, se necessário, uma descrição. As câmaras podem ser editadas, ativadas ou desativadas.
 
-7. Execute a aplicação local:
+### 3. Cadastrar um lote
 
-   ```powershell
-   flask --app run.py run --debug
-   ```
+Acesse **Estoque** e escolha **Cadastrar lote**. Preencha o código, a classificação, a apresentação, a quantidade inicial, a data de entrada, a validade opcional e a câmara.
 
-   Abra `http://127.0.0.1:5000` no navegador.
+Selecione a origem:
 
-O cadastro público cria um estabelecimento isolado, um usuário responsável e os catálogos padrão. A redefinição de senha envia um link assinado, temporário e invalidado depois da troca de senha. O link é montado com `PUBLIC_BASE_URL`; use o endereço HTTPS público ao publicar a aplicação. Sem SMTP configurado, os e-mails de recuperação não serão entregues.
+- **Mar:** informe a embarcação ou o atravessador.
+- **Viveiro:** informe a fazenda ou o produtor e o local de origem.
 
-O Google Sign-In é opcional. Crie no Google Cloud um Client ID OAuth para aplicativo Web, inclua a origem local autorizada (`http://127.0.0.1:5000`) e informe o Client ID em `GOOGLE_CLIENT_ID`. O usuário cria primeiro a conta pelo formulário de cadastro; no primeiro acesso Google com o mesmo e-mail verificado, a conta é vinculada. O backend verifica a assinatura e a audiência do token antes de iniciar a sessão. Em produção, cadastre a origem HTTPS real.
+A quantidade inicial também é registrada como a primeira entrada do histórico.
 
-## Publicação para demonstração externa
+### 4. Consultar estoque e rastreabilidade
 
-O notebook serve apenas para desenvolvimento local. Para o orientador acessar pela internet, publique a aplicação Flask e conecte-a a um PostgreSQL hospedado; não exponha o banco diretamente. Uma opção gratuita para demonstração é Render (aplicação), Neon (PostgreSQL) e Brevo (e-mail via HTTPS). A aplicação seleciona `EMAIL_PROVIDER=BREVO` no ambiente hospedado; o envio local continua podendo usar SMTP.
+Na página **Estoque**, consulte os lotes e use os filtros para localizar registros. Abra um lote para ver sua procedência, validade, câmara atual, saldo disponível e histórico de movimentações.
 
-No Render, use `pip install -r requirements.txt` como comando de build e `flask --app run.py db upgrade && gunicorn --bind 0.0.0.0:$PORT run:app` como comando de inicialização. Configure as variáveis `APP_ENV=production`, `SECRET_KEY`, `DATABASE_URL`, `PUBLIC_BASE_URL`, `GOOGLE_CLIENT_ID`, `EMAIL_PROVIDER=BREVO`, `BREVO_API_KEY`, `MAIL_DEFAULT_SENDER` e `MAIL_SENDER_NAME`. Cadastre a URL HTTPS da aplicação como origem JavaScript autorizada no cliente Google. Nunca publique `.env` nem coloque chaves em GitHub.
+As quantidades são exibidas no padrão brasileiro, com ponto para milhares e vírgula para decimais.
 
-O Render gratuito desliga o serviço web após 15 minutos sem tráfego e pode levar cerca de um minuto para voltar. O sistema de arquivos gratuito é temporário, portanto o SQLite local não deve ser usado na nuvem. O Neon Free suspende o compute após 5 minutos sem consultas, mas reativa no próximo acesso; o limite gratuito inclui horas de compute e armazenamento finitos. A conta gratuita do Brevo limita o envio diário e exige remetente verificado. Consulte as limitações atuais antes de publicar.
+### 5. Registrar uma entrada ou saída
 
-Para atualizar uma instalação existente com a migração de isolamento, faça primeiro uma cópia do banco de dados e depois execute `flask --app run.py db upgrade`. Os dados existentes serão associados ao estabelecimento legado criado pela migração.
+Nos detalhes do lote, escolha **Entrada** ou **Registrar saída**. Informe a quantidade, a data e o horário e, se desejar, observações. O sistema calcula o saldo pelas movimentações e impede que uma saída ultrapasse a quantidade disponível.
 
-As migrações já estão incluídas no projeto. Não execute `flask db init` ao abrir este ZIP. Esse comando só é necessário ao criar uma pasta de migrações do zero.
+### 6. Registrar um descarte
 
-## Verificação
+Escolha **Registrar descarte**, informe a quantidade e descreva o motivo nas observações. O descarte pode ser registrado independentemente da validade, desde que haja saldo disponível. Não é permitido descartar mais do que o saldo do lote.
 
-Execute os testes automatizados a partir da pasta `webapp`:
+### 7. Editar ou excluir um lote
+
+Nos detalhes do lote, escolha **Editar lote** para corrigir seus dados. A quantidade e a câmara não são editadas nessa tela, pois fazem parte do controle de movimentações.
+
+Para excluir, escolha **Excluir lote** e confirme. O lote e todo o seu histórico serão removidos permanentemente.
+
+### 8. Excluir uma câmara
+
+Na página **Câmaras**, escolha **Excluir**. Se houver lotes relacionados, a confirmação informa quantos serão afetados. Ao confirmar, a câmara, seus lotes e as movimentações correspondentes serão removidos permanentemente.
+
+## Executar localmente no Windows PowerShell
+
+Abra o PowerShell na pasta do projeto. Se ainda não existir um ambiente virtual, crie-o e instale as dependências:
 
 ```powershell
-python -m pytest
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-## Estado atual
+Crie o arquivo local de configuração:
 
-A aplicação inclui autenticação, dashboard, consulta e filtros de estoque, cadastro/edição/desativação de câmaras, cadastro de lotes com campos condicionais de procedência, registro de entrada inicial, entradas e saídas posteriores, histórico do lote e preferências de tema/cor. O saldo é calculado pelas movimentações e saídas acima do disponível são bloqueadas.
+```powershell
+Copy-Item .env.example .env
+```
 
-O banco possui migrações Alembic, usuário administrador criado por comando de terminal e catálogo inicial de classificações e apresentações.
+Abra `.env` e ajuste as configurações necessárias. O arquivo `.env` é local e não deve ser enviado ao GitHub.
 
+Aplique as migrações e inicie o sistema:
+
+```powershell
+.\.venv\Scripts\python.exe -m flask --app run.py db upgrade
+.\.venv\Scripts\python.exe -m flask --app run.py run --debug
+```
+
+Abra `http://127.0.0.1:5000` no navegador.
+
+Sem `DATABASE_URL`, o ambiente local usa SQLite. Para usar PostgreSQL localmente, configure a cadeia de conexão do Neon em `DATABASE_URL`.
+
+## Configurações dos serviços
+
+### Neon — banco de dados
+
+Crie um projeto PostgreSQL no Neon e use a cadeia de conexão fornecida pelo serviço como valor de `DATABASE_URL`. Na publicação, configure essa variável no painel do Render. Não publique a senha do banco nem a cadeia de conexão em arquivos versionados.
+
+### Render — hospedagem
+
+O Render hospeda a aplicação. Configure:
+
+- **Build command:** `pip install -r requirements.txt`
+- **Start command:** `flask --app run.py db upgrade && gunicorn --bind 0.0.0.0:$PORT run:app`
+
+Configure no ambiente do serviço as variáveis necessárias, incluindo `APP_ENV`, `SECRET_KEY`, `DATABASE_URL` e `PUBLIC_BASE_URL`. Use `APP_ENV=production` e o endereço HTTPS público do sistema em `PUBLIC_BASE_URL`.
+
+### Brevo — recuperação de senha
+
+Na hospedagem, o envio de e-mails usa a API do Brevo. Configure `EMAIL_PROVIDER=BREVO`, `BREVO_API_KEY`, `MAIL_DEFAULT_SENDER` e `MAIL_SENDER_NAME`. O endereço remetente precisa estar cadastrado e verificado no Brevo.
+
+Para desenvolvimento local com SMTP, configure `EMAIL_PROVIDER=SMTP` e as variáveis `MAIL_SERVER`, `MAIL_PORT`, `MAIL_USE_TLS`, `MAIL_USERNAME`, `MAIL_PASSWORD` e `MAIL_DEFAULT_SENDER`.
+
+### Google — login
+
+Crie no Google Cloud um cliente OAuth do tipo **Aplicativo da Web**. Configure como origem autorizada o endereço local `http://127.0.0.1:5000` e, em produção, o endereço HTTPS do site. Informe o Client ID em `GOOGLE_CLIENT_ID`.
+
+## Segurança e dados de configuração
+
+- Não envie `.env`, senhas, chaves de API ou cadeias de conexão ao GitHub.
+- `SECRET_KEY` deve ser longa e diferente no ambiente de produção.
+- O SQLite é destinado ao desenvolvimento local; a versão hospedada utiliza PostgreSQL.
+- As migrações do banco já acompanham o projeto. Para aplicá-las, use `flask --app run.py db upgrade`.
+- As políticas e limites dos planos de hospedagem podem mudar; consulte os provedores antes de depender de um plano gratuito.
+
+## Testes
+
+Para executar os testes automatizados, use na pasta do projeto:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest
+```

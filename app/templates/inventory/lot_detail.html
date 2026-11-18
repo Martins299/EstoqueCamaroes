@@ -3,31 +3,254 @@
 {% block body %}
 <div class="app-shell">
   {% include "partials/sidebar.html" %}
+
   <main class="main-content">
-    <header class="page-header"><div><p class="eyebrow">RASTREABILIDADE DO LOTE</p><h1>{{ lot.code }}</h1><p class="muted-copy">Procedência informada e histórico de movimentações.</p></div><div class="header-actions"><a class="btn btn-light" href="{{ url_for('inventory.stock_list') }}">Voltar ao estoque</a><a class="btn btn-outline-primary" href="{{ url_for('inventory.new_movement', type='ENTRADA', lot_id=lot.id) }}">+ Entrada</a><a class="btn btn-primary" href="{{ url_for('inventory.new_movement', type='SAIDA', lot_id=lot.id) }}">Registrar saída</a></div></header>
-    {% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div class="alert alert-{{ category }}" role="alert">{{ message }}</div>{% endfor %}{% endwith %}
-    <section class="metric-grid lot-metrics">
-      <article class="metric-card"><span class="metric-label">Quantidade inicial</span><strong>{{ '%.3f'|format(initial_entry.quantity_kg|float) if initial_entry else '0,000' }} <small>kg</small></strong><span class="metric-caption">Primeira entrada registrada</span></article>
-      <article class="metric-card"><span class="metric-label">Entradas</span><strong>{{ '%.3f'|format(total_entries|float) }} <small>kg</small></strong><span class="metric-caption">Total registrado no histórico</span></article>
-      <article class="metric-card"><span class="metric-label">Saídas</span><strong>{{ '%.3f'|format(total_exits|float) }} <small>kg</small></strong><span class="metric-caption">Total retirado</span></article>
-      <article class="metric-card balance-card"><span class="metric-label">Saldo disponível</span><strong>{{ '%.3f'|format(balance|float) }} <small>kg</small></strong><span class="metric-caption">Calculado pelas movimentações</span></article>
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">RASTREABILIDADE DO LOTE</p>
+        <h1>{{ lot.code }}</h1>
+        <p class="muted-copy">
+          Procedência informada e histórico de movimentações.
+        </p>
+      </div>
+
+      <div class="header-actions">
+        <a class="btn btn-light"
+           href="{{ url_for('inventory.stock_list') }}">
+          Voltar ao estoque
+        </a>
+
+        <a class="btn btn-outline-primary"
+           href="{{ url_for('inventory.new_movement', type='ENTRADA', lot_id=lot.id) }}">
+          + Entrada
+        </a>
+
+        <a class="btn btn-primary"
+           href="{{ url_for('inventory.new_movement', type='SAIDA', lot_id=lot.id) }}">
+          Registrar saída
+        </a>
+
+        {% if lot.expires_on and lot.expires_on < today and balance > 0 %}
+          <a class="btn btn-outline-danger"
+             href="{{ url_for('inventory.new_movement', type='DESCARTE', lot_id=lot.id) }}">
+            Registrar descarte
+          </a>
+        {% endif %}
+
+        <a class="btn btn-light"
+           href="{{ url_for('inventory.edit_lot', lot_id=lot.id) }}">
+          Editar lote
+        </a>
+
+        <form method="post"
+              action="{{ url_for('inventory.delete_lot', lot_id=lot.id) }}"
+              onsubmit="return confirm('Tem certeza de que deseja excluir este lote? A exclusão apagará também todas as entradas, saídas, descartes e o histórico de movimentações. Esta ação não pode ser desfeita.')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-outline-danger" type="submit">
+            Excluir lote
+          </button>
+        </form>
+      </div>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }}" role="alert">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endwith %}
+
+    <section class="metric-grid lot-metrics" aria-label="Resumo do lote">
+      <article class="metric-card">
+        <span class="metric-label">Quantidade inicial</span>
+        <strong>
+          {{ (initial_entry.quantity_kg if initial_entry else 0)|kg_br }}
+          <small>kg</small>
+        </strong>
+        <span class="metric-caption">Primeira entrada registrada</span>
+      </article>
+
+      <article class="metric-card">
+        <span class="metric-label">Entradas</span>
+        <strong>{{ total_entries|kg_br }} <small>kg</small></strong>
+        <span class="metric-caption">Total registrado no histórico</span>
+      </article>
+
+      <article class="metric-card">
+        <span class="metric-label">Saídas</span>
+        <strong>{{ total_sales|kg_br }} <small>kg</small></strong>
+        <span class="metric-caption">Quantidade retirada normalmente</span>
+      </article>
+
+      <article class="metric-card">
+        <span class="metric-label">Descartes</span>
+        <strong>{{ total_disposals|kg_br }} <small>kg</small></strong>
+        <span class="metric-caption">Quantidade descartada</span>
+      </article>
+
+      <article class="metric-card balance-card">
+        <span class="metric-label">Saldo disponível</span>
+        <strong>{{ balance|kg_br }} <small>kg</small></strong>
+        <span class="metric-caption">Calculado pelas movimentações</span>
+      </article>
     </section>
+
     <div class="lot-detail-grid">
-      <section class="panel-card"><div class="section-heading"><div><p class="eyebrow">PRODUTO</p><h2>Dados do lote</h2></div><span class="status-pill {{ 'positive' if balance > 0 else 'neutral' }}">{{ 'Ativo' if balance > 0 else 'Sem saldo' }}</span></div>
-        <dl class="detail-list"><div><dt>Classificação</dt><dd>{{ lot.classification.name }}</dd></div><div><dt>Apresentação</dt><dd>{{ lot.presentation.name }}</dd></div><div><dt>Origem</dt><dd>{{ 'Mar' if lot.origin == 'MAR' else 'Viveiro' }}</dd></div><div><dt>Data de entrada</dt><dd>{{ lot.received_on.strftime('%d/%m/%Y') }}</dd></div><div><dt>Validade</dt><dd>{{ lot.expires_on.strftime('%d/%m/%Y') if lot.expires_on else 'Não informada' }}</dd></div><div><dt>Câmara atual</dt><dd>{{ lot.current_chamber.name }}</dd></div></dl>
+      <section class="panel-card">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">PRODUTO</p>
+            <h2>Dados do lote</h2>
+          </div>
+
+          <span class="status-pill {{ 'positive' if balance > 0 else 'neutral' }}">
+            {{ 'Ativo' if balance > 0 else 'Sem saldo' }}
+          </span>
+        </div>
+
+        <dl class="detail-list">
+          <div>
+            <dt>Classificação</dt>
+            <dd>{{ lot.classification.name }}</dd>
+          </div>
+
+          <div>
+            <dt>Apresentação</dt>
+            <dd>{{ lot.presentation.name }}</dd>
+          </div>
+
+          <div>
+            <dt>Origem</dt>
+            <dd>{{ 'Mar' if lot.origin == 'MAR' else 'Viveiro' }}</dd>
+          </div>
+
+          <div>
+            <dt>Data de entrada</dt>
+            <dd>{{ lot.received_on.strftime('%d/%m/%Y') }}</dd>
+          </div>
+
+          <div>
+            <dt>Validade</dt>
+            <dd>
+              {{ lot.expires_on.strftime('%d/%m/%Y') if lot.expires_on else 'Não informada' }}
+            </dd>
+          </div>
+
+          <div>
+            <dt>Câmara atual</dt>
+            <dd>{{ lot.current_chamber.name }}</dd>
+          </div>
+        </dl>
       </section>
-      <section class="panel-card"><div class="section-heading"><div><p class="eyebrow">PROCEDÊNCIA DECLARADA</p><h2>Origem do camarão</h2></div></div>
-        <dl class="detail-list">{% if lot.origin == 'MAR' %}<div><dt>Embarcação ou atravessador</dt><dd>{{ lot.vessel_or_broker }}</dd></div>{% else %}<div><dt>Fazenda ou produtor</dt><dd>{{ lot.farm_or_producer }}</dd></div><div><dt>Local de origem</dt><dd>{{ lot.origin_location }}</dd></div>{% endif %}{% if lot.provenance_note %}<div class="full-width"><dt>Identificação ou observação</dt><dd>{{ lot.provenance_note }}</dd></div>{% endif %}{% if lot.notes %}<div class="full-width"><dt>Observações do lote</dt><dd>{{ lot.notes }}</dd></div>{% endif %}</dl>
+
+      <section class="panel-card">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">PROCEDÊNCIA DECLARADA</p>
+            <h2>Origem do camarão</h2>
+          </div>
+        </div>
+
+        <dl class="detail-list">
+          {% if lot.origin == 'MAR' %}
+            <div>
+              <dt>Embarcação ou atravessador</dt>
+              <dd>{{ lot.vessel_or_broker or '—' }}</dd>
+            </div>
+          {% else %}
+            <div>
+              <dt>Fazenda ou produtor</dt>
+              <dd>{{ lot.farm_or_producer or '—' }}</dd>
+            </div>
+
+            <div>
+              <dt>Local de origem</dt>
+              <dd>{{ lot.origin_location or '—' }}</dd>
+            </div>
+          {% endif %}
+
+          {% if lot.provenance_note %}
+            <div class="full-width">
+              <dt>Identificação ou observação</dt>
+              <dd>{{ lot.provenance_note }}</dd>
+            </div>
+          {% endif %}
+
+          {% if lot.notes %}
+            <div class="full-width">
+              <dt>Observações do lote</dt>
+              <dd>{{ lot.notes }}</dd>
+            </div>
+          {% endif %}
+        </dl>
       </section>
     </div>
-    <section class="panel-card"><div class="section-heading"><div><p class="eyebrow">RASTREABILIDADE</p><h2>Histórico de movimentações</h2></div><span class="status-pill neutral">{{ movements|length }} registro(s)</span></div>
-      {% if movements %}<div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Data e horário</th><th>Tipo</th><th>Quantidade</th><th>Câmara</th><th>Usuário</th><th>Observações</th><th>Saldo após</th></tr></thead><tbody>
-      {% for movement, balance_after in movement_rows %}
-      <tr><td>{{ (movement.occurred_at|fortaleza_time).strftime('%d/%m/%Y %H:%M') }}</td><td><span class="movement-label {{ 'entry-label' if movement.kind == 'ENTRADA' else 'exit-label' }}">{{ movement.kind|title }}{% if movement.is_initial %} inicial{% endif %}</span></td><td>{{ '+' if movement.kind == 'ENTRADA' else '−' }}{{ '%.3f'|format(movement.quantity_kg|float) }} kg</td><td>{{ movement.chamber.name if movement.chamber else '—' }}</td><td>{{ movement.user.name }}</td><td>{{ movement.notes or '—' }}</td><td>{{ '%.3f'|format(balance_after|float) }} kg</td></tr>
-      {% endfor %}</tbody></table></div>{% else %}<p class="empty-message">Este lote ainda não possui movimentações.</p>{% endif %}
+
+    <section class="panel-card">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">RASTREABILIDADE</p>
+          <h2>Histórico de movimentações</h2>
+        </div>
+
+        <span class="status-pill neutral">
+          {{ movements|length }} registro(s)
+        </span>
+      </div>
+
+      {% if movements %}
+        <div class="table-responsive">
+          <table class="table align-middle mb-0">
+            <thead>
+              <tr>
+                <th>Data e horário</th>
+                <th>Tipo</th>
+                <th>Quantidade</th>
+                <th>Câmara</th>
+                <th>Usuário</th>
+                <th>Observações</th>
+                <th>Saldo após</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {% for movement, balance_after in movement_rows %}
+                <tr>
+                  <td>
+                    {{ (movement.occurred_at|fortaleza_time).strftime('%d/%m/%Y %H:%M') }}
+                  </td>
+
+                  <td>
+                    <span class="movement-label {{ 'entry-label' if movement.kind == 'ENTRADA' else 'exit-label' }}">
+                      {{ movement.kind|title }}
+                      {% if movement.is_initial %} inicial{% endif %}
+                    </span>
+                  </td>
+
+                  <td>
+                    {{ '+' if movement.kind == 'ENTRADA' else '−' }}{{ movement.quantity_kg|kg_br }} kg
+                  </td>
+
+                  <td>{{ movement.chamber.name if movement.chamber else '—' }}</td>
+                  <td>{{ movement.user.name }}</td>
+                  <td>{{ movement.notes or '—' }}</td>
+                  <td>{{ balance_after|kg_br }} kg</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="empty-message">
+          Este lote ainda não possui movimentações.
+        </p>
+      {% endif %}
     </section>
-    <footer class="app-footer">A procedência exibida corresponde às informações cadastradas pelo usuário.</footer>
+
+    <footer class="app-footer">
+      A procedência exibida corresponde às informações cadastradas pelo usuário.
+    </footer>
   </main>
 </div>
 {% endblock %}
-

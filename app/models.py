@@ -114,7 +114,10 @@ class Lot(db.Model):
 class Movement(db.Model):
     __tablename__ = "movimentacoes"
     __table_args__ = (
-        CheckConstraint("tipo IN ('ENTRADA', 'SAIDA')", name="ck_movimentacoes_tipo"),
+        CheckConstraint(
+    "tipo IN ('ENTRADA', 'SAIDA', 'DESCARTE')",
+    name="ck_movimentacoes_tipo",
+),
         CheckConstraint("quantidade_kg > 0", name="ck_movimentacoes_quantidade_positiva"),
         CheckConstraint("tipo != 'ENTRADA' OR camara_id IS NOT NULL", name="ck_movimentacoes_entrada_camara"),
         CheckConstraint("entrada_inicial IS FALSE OR tipo = 'ENTRADA'", name="ck_movimentacoes_inicial_e_entrada"),

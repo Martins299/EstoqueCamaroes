@@ -22,7 +22,7 @@
       <div class="section-heading inventory-results-heading"><div><p class="eyebrow">RESULTADOS</p><h2>{{ rows|length }} lote(s)</h2></div></div>
       <div class="stock-summary-grid" aria-label="Resumo do saldo por categoria">
         {% for key, title in [('classification', 'Por classificação'), ('presentation', 'Por apresentação'), ('origin', 'Por origem'), ('chamber', 'Por câmara')] %}
-        <section class="stock-summary-card"><h3>{{ title }}</h3>{% if summaries[key] %}<ul>{% for label, amount in summaries[key].items() %}<li><span>{{ label }}</span><strong>{{ '%.3f'|format(amount|float) }} kg</strong></li>{% endfor %}</ul>{% else %}<p class="summary-empty">Sem saldo nos lotes exibidos.</p>{% endif %}</section>
+        <section class="stock-summary-card"><h3>{{ title }}</h3>{% if summaries[key] %}<ul>{% for label, amount in summaries[key].items() %}<li><span>{{ label }}</span><strong>{{ amount|kg_br }} kg</strong></li>{% endfor %}</ul>{% else %}<p class="summary-empty">Sem saldo nos lotes exibidos.</p>{% endif %}</section>
         {% endfor %}
       </div>
       {% if rows %}
@@ -31,7 +31,7 @@
         <tr>
           <td><a class="lot-link" href="{{ url_for('inventory.lot_detail', lot_id=lot.id) }}"><strong>{{ lot.code }}</strong></a></td><td>{{ lot.classification.name }}</td><td>{{ lot.presentation.name }}</td>
           <td>{{ "Mar" if lot.origin == "MAR" else "Viveiro" }}</td><td>{{ lot.current_chamber.name }}</td>
-          <td>{{ '%.3f'|format(balance|float) }} kg</td><td>{{ lot.expires_on.strftime('%d/%m/%Y') if lot.expires_on else '—' }}</td>
+          <td>{{ balance|kg_br }} kg</td><td>{{ lot.expires_on.strftime('%d/%m/%Y') if lot.expires_on else '—' }}</td>
           <td><span class="status-pill {{ 'positive' if balance > 0 else 'neutral' }}">{{ 'Ativo' if balance > 0 else 'Sem saldo' }}</span></td>
         </tr>
       {% endfor %}
