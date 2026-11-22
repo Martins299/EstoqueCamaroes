@@ -2,7 +2,11 @@
 {% block title %}Criar conta · Estoque de Camarões{% endblock %}
 {% block body %}
 <main class="login-shell"><section class="login-card" aria-labelledby="register-title">
-  <div class="brand-mark" aria-hidden="true">EC</div><p class="eyebrow">UMA CONTA PARA CADA NEGÓCIO</p>
+  <img
+  class="login-logo"
+  src="{{ url_for('static', filename='img/identidade-camarao.jpg') }}"
+  alt="Identidade visual do Estoque de Camarões"
+><p class="eyebrow">UMA CONTA PARA CADA NEGÓCIO</p>
   <h1 id="register-title">Cadastre seu estabelecimento</h1><p class="muted-copy">Seu estoque e suas movimentações serão isolados das outras contas.</p>
   {% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div class="alert alert-{{ category }}" role="alert">{{ message }}</div>{% endfor %}{% endwith %}
   <form method="post" action="{{ url_for('auth.register') }}">

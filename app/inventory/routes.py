@@ -83,13 +83,19 @@ def _parse_date(value):
 @login_required
 def stock_list():
     stock = stock_by_lot(current_user.establishment_id)
+
     statement = (
-        select(Lot, func.coalesce(stock.c.balance, 0).label("balance"))
+        select(
+            Lot,
+            func.coalesce(stock.c.balance, 0).label("balance"),
+        )
         .outerjoin(stock, stock.c.lot_id == Lot.id)
         .join(Classification, Lot.classification_id == Classification.id)
         .join(Presentation, Lot.presentation_id == Presentation.id)
         .join(Chamber, Lot.current_chamber_id == Chamber.id)
+        .where(Lot.establishment_id == current_user.establishment_id)
     )
+
     search = request.args.get("q", "").strip()
     classification_id = request.args.get("classification", type=int)
     presentation_id = request.args.get("presentation", type=int)
@@ -97,49 +103,126 @@ def stock_list():
     chamber_id = request.args.get("chamber", type=int)
     status = request.args.get("status", "active")
 
+    priority_method = request.args.get("priority", "FEFO").strip().upper()
+    if priority_method not in {"FEFO", "FIFO"}:
+        priority_method = "FEFO"
+
     if search:
         pattern = f"%{search}%"
-        statement = statement.where(or_(
-            Lot.code.ilike(pattern),
-            Lot.vessel_or_broker.ilike(pattern),
-            Lot.farm_or_producer.ilike(pattern),
-            Lot.provenance_note.ilike(pattern),
-        ))
+        statement = statement.where(
+            or_(
+                Lot.code.ilike(pattern),
+                Lot.vessel_or_broker.ilike(pattern),
+                Lot.farm_or_producer.ilike(pattern),
+                Lot.provenance_note.ilike(pattern),
+            )
+        )
+
     if classification_id:
-        statement = statement.where(Lot.classification_id == classification_id)
+        statement = statement.where(
+            Lot.classification_id == classification_id
+        )
+
     if presentation_id:
-        statement = statement.where(Lot.presentation_id == presentation_id)
+        statement = statement.where(
+            Lot.presentation_id == presentation_id
+        )
+
     if origin in {"MAR", "VIVEIRO"}:
         statement = statement.where(Lot.origin == origin)
-    if chamber_id:
-        statement = statement.where(Lot.current_chamber_id == chamber_id)
-    if status == "active":
-        statement = statement.where(func.coalesce(stock.c.balance, 0) > 0)
-    elif status == "closed":
-        statement = statement.where(func.coalesce(stock.c.balance, 0) <= 0)
 
-    rows = db.session.execute(statement.order_by(Lot.created_at.desc(), Lot.code)).all()
+    if chamber_id:
+        statement = statement.where(
+            Lot.current_chamber_id == chamber_id
+        )
+
+    if status == "active":
+        statement = statement.where(
+            func.coalesce(stock.c.balance, 0) > 0
+        )
+    elif status == "closed":
+        statement = statement.where(
+            func.coalesce(stock.c.balance, 0) <= 0
+        )
+
+    rows = db.session.execute(statement).all()
+
+    if priority_method == "FIFO":
+        rows.sort(
+            key=lambda row: (
+                row[1] <= 0,
+                row[0].received_on,
+                row[0].id,
+            )
+        )
+    else:
+        rows.sort(
+            key=lambda row: (
+                row[1] <= 0,
+                row[0].expires_on is None,
+                row[0].expires_on or date.max,
+                row[0].received_on,
+                row[0].id,
+            )
+        )
+
+    priority_lot_id = None
+
+    for lot, balance in rows:
+        if balance > 0 and (
+            priority_method == "FIFO" or lot.expires_on
+        ):
+            priority_lot_id = lot.id
+            break
+
     grouped = {
         "classification": defaultdict(lambda: Decimal("0")),
         "presentation": defaultdict(lambda: Decimal("0")),
         "origin": defaultdict(lambda: Decimal("0")),
         "chamber": defaultdict(lambda: Decimal("0")),
     }
+
     for lot, balance in rows:
         if balance > 0:
             grouped["classification"][lot.classification.name] += balance
             grouped["presentation"][lot.presentation.name] += balance
-            grouped["origin"]["Mar" if lot.origin == "MAR" else "Viveiro"] += balance
+            grouped["origin"][
+                "Mar" if lot.origin == "MAR" else "Viveiro"
+            ] += balance
             grouped["chamber"][lot.current_chamber.name] += balance
-    summaries = {key: dict(sorted(values.items())) for key, values in grouped.items()}
+
+    summaries = {
+        key: dict(sorted(values.items()))
+        for key, values in grouped.items()
+    }
+
     classifications = db.session.scalars(
-        select(Classification).where(Classification.active.is_(True)).order_by(Classification.name)
+        select(Classification)
+        .where(
+            Classification.active.is_(True),
+            Classification.establishment_id
+            == current_user.establishment_id,
+        )
+        .order_by(Classification.name)
     ).all()
+
     presentations = db.session.scalars(
-        select(Presentation).where(Presentation.active.is_(True)).order_by(Presentation.name)
+        select(Presentation)
+        .where(
+            Presentation.active.is_(True),
+            Presentation.establishment_id
+            == current_user.establishment_id,
+        )
+        .order_by(Presentation.name)
     ).all()
+
     chambers = db.session.scalars(
-        select(Chamber).where(Chamber.active.is_(True)).order_by(Chamber.name)
+        select(Chamber)
+        .where(
+            Chamber.active.is_(True),
+            Chamber.establishment_id == current_user.establishment_id,
+        )
+        .order_by(Chamber.name)
     ).all()
 
     return render_template(
@@ -149,8 +232,17 @@ def stock_list():
         classifications=classifications,
         presentations=presentations,
         chambers=chambers,
-        filters={"q": search, "classification": classification_id, "presentation": presentation_id,
-                 "origin": origin, "chamber": chamber_id, "status": status},
+        priority_method=priority_method,
+        priority_lot_id=priority_lot_id,
+        filters={
+            "q": search,
+            "classification": classification_id,
+            "presentation": presentation_id,
+            "origin": origin,
+            "chamber": chamber_id,
+            "status": status,
+            "priority": priority_method,
+        },
     )
 
 

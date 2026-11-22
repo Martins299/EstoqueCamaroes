@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}Estoque de Camarões · Controle simples de estoque{% endblock %}
+
+{% block body %}
+<main class="landing-page">
+  <header class="landing-header">
+    <a
+      class="landing-brand"
+      href="{{ url_for('main.index') }}"
+      aria-label="Estoque de Camarões — página inicial"
+    >
+      <img
+        src="{{ url_for('static', filename='img/identidade-camarao.jpg') }}"
+        alt=""
+        class="landing-brand-icon"
+      >
+      <span>Estoque de <strong>Camarões</strong></span>
+    </a>
+
+    <nav class="landing-nav" aria-label="Navegação principal">
+      <a href="#como-funciona">Como funciona</a>
+      <a href="#avisos">Informações</a>
+      <a class="landing-login-link" href="{{ url_for('auth.login') }}">Entrar</a>
+      <a class="landing-header-button" href="{{ url_for('auth.register') }}">
+        Criar conta
+      </a>
+    </nav>
+  </header>
+
+  <section class="landing-hero" aria-labelledby="landing-title">
+    <div class="landing-hero-copy">
+      <span class="landing-kicker">CONTROLE SIMPLES PARA O SEU NEGÓCIO</span>
+
+      <h1 id="landing-title">Seu estoque organizado, lote por lote.</h1>
+
+      <p class="landing-intro">
+        Cadastre os camarões recebidos, acompanhe as quantidades disponíveis
+        e consulte o histórico de cada lote em um só lugar.
+      </p>
+
+      <div class="landing-actions">
+        <a class="landing-cta" href="{{ url_for('auth.register') }}">
+          Criar conta
+        </a>
+        <a class="landing-secondary-link" href="{{ url_for('auth.login') }}">
+          Já tenho uma conta
+        </a>
+      </div>
+
+      <p class="landing-caption">
+        Cada conta mantém os dados do seu estabelecimento separados.
+      </p>
+    </div>
+
+    <div class="landing-hero-art" aria-label="Identidade visual do sistema">
+      <div class="landing-logo-frame">
+        <img
+          src="{{ url_for('static', filename='img/identidade-camarao.jpg') }}"
+          alt="Símbolo de camarão, floco de neve e ondas"
+          class="landing-main-logo"
+        >
+      </div>
+      <span class="landing-art-label">
+        Organização do recebimento à saída
+      </span>
+    </div>
+  </section>
+
+  <section class="landing-about" aria-labelledby="about-title">
+    <div class="landing-about-heading">
+      <span class="landing-kicker">SOBRE O SISTEMA</span>
+      <h2 id="about-title">
+        Organização de estoque feita para pequenos negócios
+      </h2>
+      <p>
+        O Estoque de Camarões ajuda empreendedores que compram, armazenam e
+        comercializam camarão a registrar seus lotes e acompanhar as movimentações.
+      </p>
+    </div>
+
+    <div class="landing-about-cards">
+      <article class="landing-about-card">
+        <span class="landing-about-symbol" aria-hidden="true">01</span>
+        <div>
+          <h3>Controle por lote</h3>
+          <p>
+            Consulte quantidade, classificação, apresentação, procedência declarada,
+            validade e câmara de armazenamento.
+          </p>
+        </div>
+      </article>
+
+      <article class="landing-about-card">
+        <span class="landing-about-symbol" aria-hidden="true">02</span>
+        <div>
+          <h3>Movimentações organizadas</h3>
+          <p>
+            Registre entradas, saídas e descartes e acompanhe o histórico do lote.
+            
+          </p>
+        </div>
+      </article>
+
+      <article class="landing-about-card">
+        <span class="landing-about-symbol" aria-hidden="true">03</span>
+        <div>
+          <h3>Saldos e prioridade de saída</h3>
+          <p>
+            Consulte o saldo disponível e organize os lotes por FIFO, pela entrada
+            mais antiga, ou FEFO, pela validade mais próxima.
+          </p>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section
+    class="landing-section"
+    id="como-funciona"
+    aria-labelledby="steps-title"
+  >
+    <div class="landing-section-heading">
+      <span class="landing-kicker">COMECE EM POUCOS PASSOS</span>
+      <h2 id="steps-title">Como utilizar o sistema</h2>
+      <p>
+        Registre as informações essenciais e consulte seu estoque quando precisar.
+      </p>
+    </div>
+
+    <div class="landing-steps">
+      <article class="landing-step-card">
+        <span class="landing-step-number">01</span>
+        <h3>Cadastre as câmaras</h3>
+        <p>Identifique os locais onde os lotes serão armazenados.</p>
+      </article>
+
+      <article class="landing-step-card">
+        <span class="landing-step-number">02</span>
+        <h3>Registre cada lote</h3>
+        <p>
+          Informe classificação, apresentação, origem, procedência e câmara.
+        </p>
+      </article>
+
+      <article class="landing-step-card">
+        <span class="landing-step-number">03</span>
+        <h3>Informe quantidades e datas</h3>
+        <p>
+          Registre a quantidade recebida e as datas de entrada e validade,
+          quando disponíveis.
+        </p>
+      </article>
+
+      <article class="landing-step-card">
+        <span class="landing-step-number">04</span>
+        <h3>Acompanhe as movimentações</h3>
+        <p>
+          Consulte saldo e histórico de entradas, saídas e descartes de cada lote.
+        </p>
+      </article>
+
+      <article class="landing-step-card">
+        <span class="landing-step-number">05</span>
+        <h3>Organize a prioridade</h3>
+        <p>
+          No estoque, escolha FEFO para priorizar a validade mais próxima ou
+          FIFO para priorizar a entrada mais antiga.
+        </p>
+      </article>
+    </div>
+  </section>
+
+  <section
+    class="landing-notice"
+    id="avisos"
+    aria-labelledby="notice-title"
+  >
+    <div class="landing-notice-icon" aria-hidden="true">i</div>
+
+    <div>
+      <h2 id="notice-title">Informações importantes</h2>
+      <ul>
+        <li>Os dados registrados são informados e mantidos pelo usuário.</li>
+        <li>
+          Para usar corretamente o FEFO, informe a validade dos lotes.
+          Sem essa data, a prioridade não pode ser determinada.
+        </li>
+        <li>
+          FIFO e FEFO organizam a visualização dos lotes; não registram
+          movimentações nem alteram saldos automaticamente.
+        </li>
+        <li>O sistema auxilia na organização do estoque, mas não monitora a temperatura.</li>
+        <li>
+          O sistema não substitui procedimentos de conservação, segurança alimentar
+          ou controle de qualidade.
+        </li>
+        <li>
+          Mantenha as movimentações atualizadas para que o saldo acompanhe
+          o estoque real.
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <footer class="landing-footer">
+    <span>Estoque de Camarões</span>
+    <span>Controle interno de lotes e movimentações</span>
+  </footer>
+</main>
+{% endblock %}

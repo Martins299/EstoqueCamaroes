@@ -15,9 +15,9 @@ bp = Blueprint("main", __name__)
 @bp.get("/")
 def index():
     if current_user.is_authenticated:
-        return redirect_to_dashboard()
-    from flask import redirect, url_for
-    return redirect(url_for("auth.login"))
+        return redirect(url_for("main.dashboard"))
+
+    return render_template("main/home.html")
 
 
 def redirect_to_dashboard():

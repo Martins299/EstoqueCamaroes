@@ -3,7 +3,11 @@
 {% block body %}
 <main class="login-shell">
   <section class="login-card" aria-labelledby="login-title">
-    <div class="brand-mark" aria-hidden="true">EC</div>
+    <img
+  class="login-logo"
+  src="{{ url_for('static', filename='img/identidade-camarao.jpg') }}"
+  alt="Identidade visual do Estoque de Camarões"
+>
     <p class="eyebrow">CONTROLE SIMPLES, ESTOQUE ORGANIZADO</p>
     <h1 id="login-title">Acesse sua conta</h1>
     <p class="muted-copy">Entre para consultar lotes e movimentações.</p>
@@ -37,7 +41,14 @@
       </script>
       <script src="https://accounts.google.com/gsi/client" async defer></script>
     {% endif %}
-    <p class="login-footnote"><a href="{{ url_for('auth.forgot_password') }}">Esqueci minha senha</a><br><span class="text-secondary">Ainda não tem conta?</span> <a href="{{ url_for('auth.register') }}">Cadastre seu estabelecimento</a></p>
+    <p class="login-footnote">
+  <a href="{{ url_for('main.index') }}">← Voltar à página inicial</a>
+  <br>
+  <a href="{{ url_for('auth.forgot_password') }}">Esqueci minha senha</a>
+  <br>
+  <span class="text-secondary">Ainda não tem conta?</span>
+  <a href="{{ url_for('auth.register') }}">Cadastre seu estabelecimento</a>
+</p>
   </section>
 </main>
 {% endblock %}
