@@ -101,7 +101,7 @@ def stock_list():
     presentation_id = request.args.get("presentation", type=int)
     origin = request.args.get("origin", "").strip().upper()
     chamber_id = request.args.get("chamber", type=int)
-    status = request.args.get("status", "active")
+    status = request.args.get("status", "all")
 
     priority_method = request.args.get("priority", "FEFO").strip().upper()
     if priority_method not in {"FEFO", "FIFO"}:
@@ -818,6 +818,7 @@ def new_movement():
     lot_rows = db.session.execute(
         select(Lot, func.coalesce(stock.c.balance, 0).label("balance"))
         .outerjoin(stock, stock.c.lot_id == Lot.id)
+        .where(Lot.establishment_id == current_user.establishment_id)
         .order_by(Lot.code)
     ).all()
 
@@ -831,14 +832,23 @@ def new_movement():
     if selected_type not in allowed_types:
         selected_type = "ENTRADA"
 
+    # Quando a página vem dos detalhes de um lote, esse lote fica fixo.
+    fixed_lot_id = request.args.get("lot_id", type=int)
+
     selected_lot_id = (
-        request.args.get("lot_id", type=int)
+        fixed_lot_id
         or request.form.get("lot_id", type=int)
     )
 
     if request.method == "POST":
         selected_type = request.form.get("kind", "").strip().upper()
-        selected_lot_id = request.form.get("lot_id", type=int)
+
+        # Se houver lote fixo na URL, ignora qualquer outro ID enviado no formulário.
+        selected_lot_id = (
+            fixed_lot_id
+            or request.form.get("lot_id", type=int)
+        )
+
         quantity = _parse_quantity(request.form.get("quantity", ""))
         occurred_raw = request.form.get("occurred_at", "").strip()
         notes = request.form.get("notes", "").strip() or None
@@ -846,21 +856,29 @@ def new_movement():
 
         if selected_type not in allowed_types:
             errors.append("Selecione entrada, saída ou descarte.")
+
         if not selected_lot_id:
             errors.append("Selecione um lote.")
+
         if not quantity:
             errors.append(
                 "Informe uma quantidade maior que zero, "
                 "com até três casas decimais."
             )
+
         if selected_type == "DESCARTE" and not notes:
             errors.append("Informe o motivo do descarte nas observações.")
 
-        lot = db.session.execute(
-            select(Lot)
-            .where(Lot.id == selected_lot_id)
-            .with_for_update()
-        ).scalar_one_or_none() if selected_lot_id else None
+        lot = None
+        if selected_lot_id:
+            lot = db.session.execute(
+                select(Lot)
+                .where(
+                    Lot.id == selected_lot_id,
+                    Lot.establishment_id == current_user.establishment_id,
+                )
+                .with_for_update()
+            ).scalar_one_or_none()
 
         if selected_lot_id and not lot:
             errors.append("O lote selecionado não foi encontrado.")
@@ -870,10 +888,12 @@ def new_movement():
         else:
             try:
                 occurred_local = datetime.fromisoformat(occurred_raw)
+
                 if occurred_local.tzinfo is None:
                     occurred_local = occurred_local.replace(
                         tzinfo=ZoneInfo("America/Fortaleza")
                     )
+
                 occurred_at = occurred_local.astimezone(timezone.utc)
             except ValueError:
                 occurred_at = None
@@ -920,14 +940,18 @@ def new_movement():
                     notes=notes,
                 )
             )
+
             try:
                 db.session.commit()
+
                 success_messages = {
                     "ENTRADA": "Entrada registrada.",
                     "SAIDA": "Saída registrada.",
                     "DESCARTE": "Descarte registrado.",
                 }
+
                 flash(success_messages[selected_type], "success")
+
                 return redirect(
                     url_for("inventory.lot_detail", lot_id=lot.id)
                 )
@@ -935,11 +959,31 @@ def new_movement():
                 db.session.rollback()
                 raise
 
+    fixed_lot_row = next(
+        (
+            row
+            for row in lot_rows
+            if fixed_lot_id and row[0].id == fixed_lot_id
+        ),
+        None,
+    )
+
+    if fixed_lot_row:
+        fixed_lot, fixed_lot_balance = fixed_lot_row
+    else:
+        fixed_lot = None
+        fixed_lot_balance = Decimal("0")
+
+    if fixed_lot_id and not fixed_lot:
+        flash("O lote selecionado não foi encontrado.", "danger")
+
     return render_template(
         "inventory/movement_form.html",
         lots=lot_rows,
         selected_type=selected_type,
         selected_lot_id=selected_lot_id,
+        fixed_lot=fixed_lot,
+        fixed_lot_balance=fixed_lot_balance,
         today=today_local,
         now_local=datetime.now(
             ZoneInfo("America/Fortaleza")

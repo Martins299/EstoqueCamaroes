@@ -36,7 +36,10 @@
         </div>
       </header>
 
-      <section class="report-identification" aria-label="Identificação do relatório">
+      <section
+        class="report-identification"
+        aria-label="Identificação do relatório"
+      >
         <div>
           <span>Estabelecimento</span>
           <strong>{{ establishment_name }}</strong>
@@ -53,7 +56,10 @@
         </div>
       </section>
 
-      <section class="report-summary" aria-label="Resumo do estoque atual">
+      <section
+        class="report-summary"
+        aria-label="Resumo do estoque atual"
+      >
         <div class="report-summary-card">
           <span>Quantidade total disponível</span>
           <strong>{{ total_kg|kg_br }} kg</strong>
@@ -98,10 +104,12 @@
 
                     <td>
                       {% if lot.origin == "MAR" %}
-                        Mar{% if lot.vessel_or_broker %} — {{ lot.vessel_or_broker }}{% endif %}
+                        Mar{% if lot.vessel_or_broker %} — {{ lot.vessel_or_broker|title }}{% endif %}
                       {% else %}
-                        Viveiro{% if lot.farm_or_producer %} — {{ lot.farm_or_producer }}{% endif %}
-                        {% if lot.origin_location %}, {{ lot.origin_location }}{% endif %}
+                        Viveiro{% if lot.farm_or_producer %} — {{ lot.farm_or_producer|title }}{% endif %}
+                        {% if lot.origin_location %}
+                          , {{ lot.origin_location|title|replace("- Se", "- SE")|replace(" - Se", " - SE") }}
+                        {% endif %}
                       {% endif %}
 
                       {% if lot.provenance_note %}
@@ -113,9 +121,11 @@
 
                     <td>{{ lot.current_chamber.name }}</td>
                     <td>{{ lot.received_on.strftime("%d/%m/%Y") }}</td>
+
                     <td>
                       {{ lot.expires_on.strftime("%d/%m/%Y") if lot.expires_on else "Não informada" }}
                     </td>
+
                     <td class="text-end">{{ balance|kg_br }} kg</td>
                   </tr>
                 {% endfor %}
@@ -132,7 +142,9 @@
         {% else %}
           <div class="report-empty">
             <h3>Não há lotes com saldo disponível</h3>
-            <p>Quando houver estoque registrado, os lotes aparecerão neste relatório.</p>
+            <p>
+              Quando houver estoque registrado, os lotes aparecerão neste relatório.
+            </p>
           </div>
         {% endif %}
       </section>

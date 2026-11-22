@@ -909,7 +909,8 @@ body[data-theme="ESCURO"] .stock-summary-card { background: #1a2732; }
 .report-provenance-note {
   display: block;
   margin-top: 3px;
-  color: var(--muted);
+  color: inherit;
+  font-size: inherit;
 }
 
 .report-empty {

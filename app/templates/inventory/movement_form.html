@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Movimentação · Estoque de Camarões{% endblock %}
+
 {% block body %}
 <div class="app-shell">
   {% include "partials/sidebar.html" %}
@@ -13,6 +14,7 @@
           Registre uma entrada, saída ou descarte de lote.
         </p>
       </div>
+
       <a class="btn btn-light" href="{{ url_for('inventory.stock_list') }}">
         Voltar ao estoque
       </a>
@@ -28,29 +30,45 @@
 
     <section class="panel-card movement-card">
       <form method="post">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input
+          type="hidden"
+          name="csrf_token"
+          value="{{ csrf_token() }}"
+        >
 
         <div class="mb-4">
           <label class="form-label d-block">Tipo de movimentação*</label>
 
           <div class="movement-type-options">
             <label class="movement-type in-type">
-              <input type="radio" name="kind" value="ENTRADA"
-                     {% if selected_type == 'ENTRADA' %}checked{% endif %}>
+              <input
+                type="radio"
+                name="kind"
+                value="ENTRADA"
+                {% if selected_type == "ENTRADA" %}checked{% endif %}
+              >
               <span>↓</span>
               <strong>Entrada</strong>
             </label>
 
             <label class="movement-type out-type">
-              <input type="radio" name="kind" value="SAIDA"
-                     {% if selected_type == 'SAIDA' %}checked{% endif %}>
+              <input
+                type="radio"
+                name="kind"
+                value="SAIDA"
+                {% if selected_type == "SAIDA" %}checked{% endif %}
+              >
               <span>↑</span>
               <strong>Saída</strong>
             </label>
 
             <label class="movement-type out-type">
-              <input type="radio" name="kind" value="DESCARTE"
-                     {% if selected_type == 'DESCARTE' %}checked{% endif %}>
+              <input
+                type="radio"
+                name="kind"
+                value="DESCARTE"
+                {% if selected_type == "DESCARTE" %}checked{% endif %}
+              >
               <span>×</span>
               <strong>Descarte</strong>
             </label>
@@ -58,62 +76,102 @@
         </div>
 
         <div class="mb-3">
-          <label class="form-label" for="lot_id">Lote*</label>
+          <label class="form-label">Lote*</label>
 
-          <select class="form-select" id="lot_id" name="lot_id" required>
-            <option value="">Selecione o lote</option>
+          {% if fixed_lot %}
+            <input
+              type="hidden"
+              name="lot_id"
+              value="{{ fixed_lot.id }}"
+            >
 
-            {% for lot, balance in lots %}
-              <option value="{{ lot.id }}"
-                      data-balance="{{ '%.3f'|format(balance|float) }}"
-                      {% if selected_lot_id == lot.id %}selected{% endif %}
-                      {% if selected_type in ['SAIDA', 'DESCARTE'] and balance <= 0 %}disabled{% endif %}>
-                {{ lot.code }} · {{ lot.classification.name }} · {{ balance|kg_br }} kg disponíveis
-              </option>
-            {% endfor %}
-          </select>
+            <div
+              id="fixed-lot-display"
+              class="form-control"
+              data-balance="{{ '%.3f'|format(fixed_lot_balance|float) }}"
+              aria-readonly="true"
+            >
+              {{ fixed_lot.code }} · {{ fixed_lot.classification.name }}
+            </div>
+          {% else %}
+            <select
+              class="form-select"
+              id="lot_id"
+              name="lot_id"
+              required
+            >
+              <option value="">Selecione o lote</option>
 
-          <div id="balance-hint" class="field-hint" aria-live="polite"></div>
+              {% for lot, balance in lots %}
+                <option
+                  value="{{ lot.id }}"
+                  data-balance="{{ '%.3f'|format(balance|float) }}"
+                  {% if selected_lot_id == lot.id %}selected{% endif %}
+                  {% if selected_type in ["SAIDA", "DESCARTE"] and balance <= 0 %}disabled{% endif %}
+                >
+                  {{ lot.code }} · {{ lot.classification.name }} ·
+                  {{ balance|kg_br }} kg disponíveis
+                </option>
+              {% endfor %}
+            </select>
+          {% endif %}
+
+          <div
+            id="balance-hint"
+            class="field-hint"
+            aria-live="polite"
+          ></div>
         </div>
 
         <div class="form-grid">
           <div>
-            <label class="form-label" for="quantity">Quantidade (kg)*</label>
-            <input class="form-control"
-                   id="quantity"
-                   name="quantity"
-                   type="text"
-                   inputmode="decimal"
-                   maxlength="20"
-                   required
-                   value="{{ request.form.get('quantity', '') }}"
-                   placeholder="Ex.: 3.000,000">
+            <label class="form-label" for="quantity">
+              Quantidade (kg)*
+            </label>
+            <input
+              class="form-control"
+              id="quantity"
+              name="quantity"
+              type="text"
+              inputmode="decimal"
+              maxlength="20"
+              required
+              value="{{ request.form.get('quantity', '') }}"
+              placeholder="Ex.: 3.000,000"
+            >
           </div>
 
           <div>
-            <label class="form-label" for="occurred_at">Data e horário*</label>
-            <input class="form-control"
-                   id="occurred_at"
-                   name="occurred_at"
-                   type="datetime-local"
-                   required
-                   value="{{ request.form.get('occurred_at', now_local) }}">
+            <label class="form-label" for="occurred_at">
+              Data e horário*
+            </label>
+            <input
+              class="form-control"
+              id="occurred_at"
+              name="occurred_at"
+              type="datetime-local"
+              required
+              value="{{ request.form.get('occurred_at', now_local) }}"
+            >
           </div>
 
           <div class="full-width">
             <label class="form-label" for="notes" id="notes-label">
-              {% if selected_type == 'DESCARTE' %}
+              {% if selected_type == "DESCARTE" %}
                 Motivo do descarte*
               {% else %}
                 Observações (opcional)
               {% endif %}
             </label>
-            <textarea class="form-control"
-                      id="notes"
-                      name="notes"
-                      rows="3"
-                      maxlength="2000"
-                      {% if selected_type == 'DESCARTE' %}required{% endif %}>{{ request.form.get('notes', '') }}</textarea>
+
+            <textarea
+              class="form-control"
+              id="notes"
+              name="notes"
+              rows="3"
+              maxlength="2000"
+              {% if selected_type == "DESCARTE" %}required{% endif %}
+            >{{ request.form.get('notes', '') }}</textarea>
           </div>
         </div>
 
@@ -121,6 +179,7 @@
           <a class="btn btn-light" href="{{ url_for('inventory.stock_list') }}">
             Cancelar
           </a>
+
           <button class="btn btn-primary" type="submit">
             Registrar movimentação
           </button>
@@ -133,6 +192,7 @@
 <script>
   const kindInputs = document.querySelectorAll('input[name="kind"]');
   const lotSelect = document.getElementById('lot_id');
+  const fixedLotDisplay = document.getElementById('fixed-lot-display');
   const balanceHint = document.getElementById('balance-hint');
   const notesField = document.getElementById('notes');
   const notesLabel = document.getElementById('notes-label');
@@ -140,17 +200,24 @@
   function updateMovementOptions() {
     const kind = document.querySelector('input[name="kind"]:checked')?.value;
 
-    [...lotSelect.options].forEach((option) => {
-      if (!option.value) return;
+    if (lotSelect) {
+      [...lotSelect.options].forEach((option) => {
+        if (!option.value) return;
 
-      const balance = Number(option.dataset.balance);
-      option.disabled =
-        (kind === 'SAIDA' || kind === 'DESCARTE') && balance <= 0;
-    });
+        const balance = Number(option.dataset.balance);
+        option.disabled =
+          (kind === 'SAIDA' || kind === 'DESCARTE') && balance <= 0;
+      });
+    }
 
-    const selected = lotSelect.selectedOptions[0];
-    const rawBalance = selected?.dataset.balance;
-    const balance = rawBalance === undefined ? NaN : Number(rawBalance);
+    const selectedOption = lotSelect?.selectedOptions[0];
+    const rawBalance = lotSelect
+      ? selectedOption?.dataset.balance
+      : fixedLotDisplay?.dataset.balance;
+
+    const balance = rawBalance === undefined
+      ? NaN
+      : Number(rawBalance);
 
     const formattedBalance = Number.isFinite(balance)
       ? balance.toLocaleString('pt-BR', {
@@ -174,7 +241,7 @@
     input.addEventListener('change', updateMovementOptions);
   });
 
-  lotSelect.addEventListener('change', updateMovementOptions);
+  lotSelect?.addEventListener('change', updateMovementOptions);
   updateMovementOptions();
 </script>
 {% endblock %}
