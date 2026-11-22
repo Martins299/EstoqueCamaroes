@@ -245,6 +245,49 @@ def stock_list():
         },
     )
 
+@bp.get("/stock/report")
+@login_required
+def stock_report():
+    stock = stock_by_lot(current_user.establishment_id)
+
+    rows = db.session.execute(
+        select(
+            Lot,
+            func.coalesce(stock.c.balance, 0).label("balance"),
+        )
+        .outerjoin(stock, stock.c.lot_id == Lot.id)
+        .where(
+            Lot.establishment_id == current_user.establishment_id,
+            func.coalesce(stock.c.balance, 0) > 0,
+        )
+    ).all()
+
+    rows.sort(
+        key=lambda row: (
+            row[0].expires_on is None,
+            row[0].expires_on or date.max,
+            row[0].received_on,
+            row[0].id,
+        )
+    )
+
+    total_kg = sum(
+        (balance for lot, balance in rows),
+        Decimal("0"),
+    )
+
+    generated_at = datetime.now(
+        ZoneInfo("America/Fortaleza")
+    ).strftime("%d/%m/%Y às %H:%M")
+
+    return render_template(
+        "inventory/stock_report.html",
+        rows=rows,
+        total_kg=total_kg,
+        generated_at=generated_at,
+        establishment_name=current_user.establishment.name,
+        owner_name=current_user.name,
+    )
 
 @bp.route("/chambers", methods=["GET", "POST"])
 @login_required

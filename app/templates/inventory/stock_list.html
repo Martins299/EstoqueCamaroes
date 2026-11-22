@@ -13,8 +13,16 @@
         <p class="muted-copy">Consulte lotes e saldos disponíveis.</p>
       </div>
 
-      <a class="btn btn-primary" href="{{ url_for('inventory.new_lot') }}">
-        + Cadastrar lote
+      <div class="header-actions">
+  <a class="btn btn-light" href="{{ url_for('inventory.stock_report') }}">
+    Imprimir relatório
+  </a>
+
+  <a class="btn btn-primary" href="{{ url_for('inventory.new_lot') }}">
+    + Cadastrar lote
+  </a>
+  
+</div>
       </a>
     </header>
 

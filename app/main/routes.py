@@ -73,26 +73,38 @@ def dashboard():
 @login_required
 def preferences():
     preference = current_user.preferences
+
     if request.method == "POST":
         theme = request.form.get("theme", "").strip().upper()
-        accent = request.form.get("accent_color", "").strip().upper()
+        establishment_name = request.form.get("establishment_name", "").strip()
+
+        errors = []
+
         if theme not in {"CLARO", "ESCURO"}:
-            flash("Selecione um tema válido.", "danger")
-        elif accent not in {"AZUL", "VERDE", "TERRACOTA"}:
-            flash("Selecione uma cor de destaque válida.", "danger")
+            errors.append("Selecione o tema claro ou escuro.")
+
+        if not establishment_name:
+            errors.append("Informe o nome do estabelecimento.")
+        elif len(establishment_name) > 140:
+            errors.append("O nome do estabelecimento deve ter até 140 caracteres.")
+
+        if errors:
+            for message in errors:
+                flash(message, "danger")
         else:
             if preference is None:
                 preference = UserPreference(user_id=current_user.id)
                 db.session.add(preference)
+
             preference.theme = theme
-            preference.accent_color = accent
+            current_user.establishment.name = establishment_name
+
             db.session.commit()
-            flash("Preferências salvas.", "success")
+            flash("Preferências atualizadas.", "success")
             return redirect(url_for("main.preferences"))
 
     return render_template(
         "main/preferences.html",
         theme=preference.theme if preference else "CLARO",
-        accent_color=preference.accent_color if preference else "AZUL",
+        establishment_name=current_user.establishment.name,
     )
-

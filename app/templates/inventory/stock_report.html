@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}Relatório de estoque · Estoque de Camarões{% endblock %}
+
+{% block body %}
+<div class="app-shell">
+  {% include "partials/sidebar.html" %}
+
+  <main class="main-content report-page">
+    <div class="report-actions">
+      <a class="btn btn-light" href="{{ url_for('inventory.stock_list') }}">
+        Voltar ao estoque
+      </a>
+
+      <button
+        class="btn btn-primary"
+        type="button"
+        onclick="window.print()"
+      >
+        Imprimir / Salvar PDF
+      </button>
+    </div>
+
+    <article class="panel-card report-sheet">
+      <header class="report-header">
+        <img
+          class="report-logo"
+          src="{{ url_for('static', filename='img/identidade-camarao.jpg') }}"
+          alt="Logo do Estoque de Camarões"
+        >
+
+        <div class="report-title">
+          <p class="eyebrow">RELATÓRIO DE ESTOQUE</p>
+          <h1>Estoque atual de camarões</h1>
+          <p class="muted-copy">Estoque de Camarões</p>
+        </div>
+      </header>
+
+      <section class="report-identification" aria-label="Identificação do relatório">
+        <div>
+          <span>Estabelecimento</span>
+          <strong>{{ establishment_name }}</strong>
+        </div>
+
+        <div>
+          <span>Proprietário / responsável</span>
+          <strong>{{ owner_name }}</strong>
+        </div>
+
+        <div>
+          <span>Gerado em</span>
+          <strong>{{ generated_at }}</strong>
+        </div>
+      </section>
+
+      <section class="report-summary" aria-label="Resumo do estoque atual">
+        <div class="report-summary-card">
+          <span>Quantidade total disponível</span>
+          <strong>{{ total_kg|kg_br }} kg</strong>
+        </div>
+
+        <div class="report-summary-card">
+          <span>Lotes com saldo</span>
+          <strong>{{ rows|length }}</strong>
+        </div>
+      </section>
+
+      <section class="report-table-section">
+        <div class="report-section-heading">
+          <div>
+            <p class="eyebrow">INVENTÁRIO</p>
+            <h2>Lotes atualmente disponíveis</h2>
+          </div>
+        </div>
+
+        {% if rows %}
+          <div class="table-responsive">
+            <table class="table align-middle report-table">
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Classificação</th>
+                  <th>Apresentação</th>
+                  <th>Origem e procedência</th>
+                  <th>Câmara</th>
+                  <th>Entrada</th>
+                  <th>Validade</th>
+                  <th class="text-end">Saldo</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {% for lot, balance in rows %}
+                  <tr>
+                    <td><strong>{{ lot.code }}</strong></td>
+                    <td>{{ lot.classification.name }}</td>
+                    <td>{{ lot.presentation.name }}</td>
+
+                    <td>
+                      {% if lot.origin == "MAR" %}
+                        Mar{% if lot.vessel_or_broker %} — {{ lot.vessel_or_broker }}{% endif %}
+                      {% else %}
+                        Viveiro{% if lot.farm_or_producer %} — {{ lot.farm_or_producer }}{% endif %}
+                        {% if lot.origin_location %}, {{ lot.origin_location }}{% endif %}
+                      {% endif %}
+
+                      {% if lot.provenance_note %}
+                        <small class="report-provenance-note">
+                          {{ lot.provenance_note }}
+                        </small>
+                      {% endif %}
+                    </td>
+
+                    <td>{{ lot.current_chamber.name }}</td>
+                    <td>{{ lot.received_on.strftime("%d/%m/%Y") }}</td>
+                    <td>
+                      {{ lot.expires_on.strftime("%d/%m/%Y") if lot.expires_on else "Não informada" }}
+                    </td>
+                    <td class="text-end">{{ balance|kg_br }} kg</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+
+              <tfoot>
+                <tr>
+                  <th colspan="7">Total disponível</th>
+                  <th class="text-end">{{ total_kg|kg_br }} kg</th>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        {% else %}
+          <div class="report-empty">
+            <h3>Não há lotes com saldo disponível</h3>
+            <p>Quando houver estoque registrado, os lotes aparecerão neste relatório.</p>
+          </div>
+        {% endif %}
+      </section>
+
+      <footer class="report-footer">
+        Relatório gerado pelo sistema Estoque de Camarões.
+        Os dados refletem as informações registradas pelos usuários.
+      </footer>
+    </article>
+  </main>
+</div>
+{% endblock %}

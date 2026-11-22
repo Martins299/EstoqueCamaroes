@@ -1,17 +1,111 @@
 {% extends "base.html" %}
 {% block title %}Preferências · Estoque de Camarões{% endblock %}
+
 {% block body %}
 <div class="app-shell">
   {% include "partials/sidebar.html" %}
+
   <main class="main-content">
-    <header class="page-header"><div><p class="eyebrow">PERSONALIZAÇÃO</p><h1>Preferências</h1><p class="muted-copy">Ajuste a aparência do sistema para sua visualização.</p></div></header>
-    {% with messages = get_flashed_messages(with_categories=true) %}{% for category, message in messages %}<div class="alert alert-{{ category }}" role="alert">{{ message }}</div>{% endfor %}{% endwith %}
-    <section class="panel-card preference-card"><form method="post">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <fieldset class="preference-fieldset"><legend>Tema</legend><p class="muted-copy">Escolha a aparência que prefere usar.</p><div class="preference-options"><label class="preference-option"><input type="radio" name="theme" value="CLARO" {% if theme == 'CLARO' %}checked{% endif %}><span><strong>Claro</strong><small>Fundo claro e leitura leve</small></span></label><label class="preference-option"><input type="radio" name="theme" value="ESCURO" {% if theme == 'ESCURO' %}checked{% endif %}><span><strong>Escuro</strong><small>Fundo escuro para baixa luminosidade</small></span></label></div></fieldset>
-      <fieldset class="preference-fieldset"><legend>Cor de destaque</legend><p class="muted-copy">A cor aparece nos botões e nos elementos principais.</p><div class="preference-options accent-options"><label class="accent-option"><input type="radio" name="accent_color" value="AZUL" {% if accent_color == 'AZUL' %}checked{% endif %}><span class="color-swatch swatch-blue"></span><strong>Azul-marinho</strong></label><label class="accent-option"><input type="radio" name="accent_color" value="VERDE" {% if accent_color == 'VERDE' %}checked{% endif %}><span class="color-swatch swatch-green"></span><strong>Verde</strong></label><label class="accent-option"><input type="radio" name="accent_color" value="TERRACOTA" {% if accent_color == 'TERRACOTA' %}checked{% endif %}><span class="color-swatch swatch-clay"></span><strong>Terracota</strong></label></div></fieldset>
-      <div class="form-actions"><button class="btn btn-primary" type="submit">Salvar preferências</button></div>
-    </form></section>
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">CONFIGURAÇÕES</p>
+        <h1>Preferências</h1>
+        <p class="muted-copy">
+          Altere o tema e os dados do seu estabelecimento.
+        </p>
+      </div>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }}" role="alert">
+          {{ message }}
+        </div>
+      {% endfor %}
+    {% endwith %}
+
+    <section class="panel-card preference-card">
+      <form method="post">
+        <input
+          type="hidden"
+          name="csrf_token"
+          value="{{ csrf_token() }}"
+        >
+
+        <fieldset class="preference-fieldset">
+          <legend>Tema</legend>
+          <p class="muted-copy">
+            Escolha a aparência do sistema.
+          </p>
+
+          <div class="preference-options">
+            <label class="preference-option">
+              <input
+                type="radio"
+                name="theme"
+                value="CLARO"
+                {% if theme == "CLARO" %}checked{% endif %}
+              >
+              <span>
+                <strong>Claro</strong>
+                <small>Fundo claro, adequado para ambientes iluminados.</small>
+              </span>
+            </label>
+
+            <label class="preference-option">
+              <input
+                type="radio"
+                name="theme"
+                value="ESCURO"
+                {% if theme == "ESCURO" %}checked{% endif %}
+              >
+              <span>
+                <strong>Escuro</strong>
+                <small>Fundo escuro, confortável em ambientes com pouca luz.</small>
+              </span>
+            </label>
+          </div>
+        </fieldset>
+
+        <div class="preference-fieldset">
+          <label class="form-label" for="establishment_name">
+            Nome do estabelecimento
+          </label>
+          <input
+            class="form-control"
+            type="text"
+            id="establishment_name"
+            name="establishment_name"
+            maxlength="140"
+            value="{{ establishment_name }}"
+            required
+          >
+          <small class="field-hint">
+            Esse nome será exibido na identificação do estabelecimento.
+          </small>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-primary" type="submit">
+            Salvar alterações
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel-card preference-card">
+      <p class="eyebrow">SOBRE</p>
+      <h2 class="section-heading-title">Estoque de Camarões</h2>
+      <p class="muted-copy">
+        Versão atual: <strong>BETA</strong>
+      </p>
+      <p class="muted-copy preference-contact">
+        Dúvidas ou sugestões? Entre em contato com
+        <a href="mailto:eliseu.fm2002@gmail.com">
+          eliseu.fm2002@gmail.com
+        </a>
+      </p>
+    </section>
   </main>
 </div>
 {% endblock %}
